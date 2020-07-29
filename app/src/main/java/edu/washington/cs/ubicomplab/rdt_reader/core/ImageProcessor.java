@@ -967,7 +967,7 @@ public class ImageProcessor {
         boolean topLine = false;
         boolean middleLine = false;
         boolean bottomLine = false;
-
+        ArrayList<double[]> peaks = new ArrayList<>();
         boolean tuned = false;
 
         int offset = 0;
@@ -996,7 +996,7 @@ public class ImageProcessor {
             if (resultWindowMat.width() == 0 && resultWindowMat.height() == 0)
                 return new RDTInterpretationResult(resultWindowMat,
                         false, false, false,
-                        mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, false, mRDT.numberOfLines);
+                        mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, false, mRDT.numberOfLines, peaks);
 
             // Convert the result window to grayscale
             Mat grayMat = new Mat();
@@ -1045,7 +1045,7 @@ public class ImageProcessor {
             }
 
             // Detect the peaks
-            ArrayList<double[]> peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
+            peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
             for (double[] p : peaks)
                 Log.d(TAG, String.format("peak: %.2f, %.2f, %.2f, %.2f", p[0], p[1], p[2], avgHues[(int)p[0]]));
 
@@ -1126,6 +1126,6 @@ public class ImageProcessor {
 
         return new RDTInterpretationResult(resultWindowMat,
                 topLine, middleLine, bottomLine,
-                mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, hasTooMuchBlood, mRDT.numberOfLines);
+                mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, hasTooMuchBlood, mRDT.numberOfLines, peaks);
     }
 }

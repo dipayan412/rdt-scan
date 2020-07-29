@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.io.Serializable;
+
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.ImageQualityViewListener;
 import edu.washington.cs.ubicomplab.rdt_reader.views.ImageQualityView;
 import edu.washington.cs.ubicomplab.rdt_reader.R;
@@ -120,6 +122,11 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
                 i.putExtra("timeTaken", timeTaken);
                 i.putExtra("hasTooMuchBlood", rdtInterpretationResult.hasTooMuchBlood);
                 i.putExtra("numberOfLines", rdtInterpretationResult.numberOfLines);
+
+                Bundle args = new Bundle();
+                args.putSerializable("ARRAYLIST",(Serializable)rdtInterpretationResult.peaks);
+                i.putExtra("BUNDLE",args);
+
                 startActivity(i);
             }
         });

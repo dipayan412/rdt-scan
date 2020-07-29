@@ -26,6 +26,7 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 
@@ -64,11 +65,16 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         initViews();
     }
 
+    //  size = 3
+
     /**
      * Initializes UI elements based on that data that was passed through the intent
      */
     private void initViews() {
         Intent intent = getIntent();
+
+        Bundle args = intent.getBundleExtra("BUNDLE");
+        ArrayList<double[]> peaks = (ArrayList<double[]>) args.getSerializable("ARRAYLIST");
 
         // Captured image
         if (intent.hasExtra("captured")) {

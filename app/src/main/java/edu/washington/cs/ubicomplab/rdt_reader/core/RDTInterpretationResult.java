@@ -5,6 +5,8 @@ import android.graphics.Bitmap;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
+import java.util.ArrayList;
+
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.DEFAULT_BOTTOM_LINE_NAME;
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.DEFAULT_MIDDLE_LINE_NAME;
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.DEFAULT_TOP_LINE_NAME;
@@ -25,6 +27,7 @@ public class RDTInterpretationResult {
     public Bitmap resultBitmap;
     public boolean hasTooMuchBlood;
     public int numberOfLines;
+    public ArrayList<double[]> peaks;
 
     public RDTInterpretationResult() {
         topLine = false;
@@ -37,11 +40,12 @@ public class RDTInterpretationResult {
         resultBitmap = null;
         hasTooMuchBlood = false;
         numberOfLines = 2;
+        peaks = new ArrayList<>();
     }
 
     public RDTInterpretationResult(Mat resultMat, boolean topLine, boolean middleLine, boolean bottomLine,
                                    String topLineName, String middleLineName, String bottomLineName,
-                                   boolean hasTooMuchBlood, int numberOfLines){
+                                   boolean hasTooMuchBlood, int numberOfLines, ArrayList<double[]> peaks){
         this.resultMat = resultMat;
         this.topLine = topLine;
         this.middleLine = middleLine;
@@ -51,7 +55,7 @@ public class RDTInterpretationResult {
         this.bottomLineName = bottomLineName;
         this.hasTooMuchBlood = hasTooMuchBlood;
         this.numberOfLines = numberOfLines;
-
+        this.peaks = peaks;
         // Convert the image to a Bitmap so it can be displayed with Android
         if (resultMat.cols() > 0 && resultMat.rows() > 0) {
             this.resultBitmap = Bitmap.createBitmap(resultMat.cols(), resultMat.rows(),
