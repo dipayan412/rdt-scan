@@ -35,6 +35,7 @@ import java.io.FileOutputStream;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 
 import edu.washington.cs.ubicomplab.rdt_reader.core.Constants;
@@ -201,7 +202,7 @@ public final class ImageUtil {
     public static ArrayList<double[]> detectPeaks(double[] arr, double delta, boolean max) {
         ArrayList<double[]> peaks = new ArrayList<>();
         ArrayList<double[]> troughs = new ArrayList<>();
-
+        Log.d(TAG,"array "+ Arrays.toString(arr));
         // Initialize peak tracking variables
         double min_val = arr[0];
         double max_val = arr[0];

@@ -991,7 +991,6 @@ public class ImageProcessor {
         do {
             // Crop the result window
             resultWindowMat = cropResultWindow(inputMat, boundary, offset);
-
             // Skip if there is no window to interpret
             if (resultWindowMat.width() == 0 && resultWindowMat.height() == 0)
                 return new RDTInterpretationResult(resultWindowMat,
@@ -1004,6 +1003,7 @@ public class ImageProcessor {
 
             // Detect if image has too much blood (which may gives incorrect result)
             hasTooMuchBlood = checkBlood(inputMat, boundary, offset);
+
 
             // Compute variance within the window
             MatOfDouble mu = new MatOfDouble();
@@ -1049,11 +1049,23 @@ public class ImageProcessor {
             for (double[] p : peaks)
                 Log.d(TAG, String.format("peak: %.2f, %.2f, %.2f, %.2f", p[0], p[1], p[2], avgHues[(int)p[0]]));
 
+            Point pt1_control=new Point(peaks.get(0)[0],0);
+            Point pt2_control=new Point(peaks.get(0)[0],4);
+            Point pt1_test=new Point(peaks.get(1)[0],0);
+            Point pt2_test=new Point(peaks.get(1)[0],4);
+
+            Log.d(TAG,"ControlPt1="+Integer.toString(0)+"," +Double.toString(peaks.get(0)[0]));
+            Log.d(TAG,"ControlPt2="+resultWindowMat.width()+"," +Double.toString(peaks.get(0)[0]));
+
+            Imgproc.line(resultWindowMat,pt1_control,pt2_control,new Scalar(255,166,0),1);
+            Imgproc.line(resultWindowMat,pt1_test,pt2_test,new Scalar(72,255,0),1);
+
             // Determine which peaks correspond to which lines
             int detectedControlLineIndex = -1;
             double detectedControlLineDiff = Double.MAX_VALUE;
             for (int i = 0; i < peaks.size(); i ++) {
                 if (Math.abs(peaks.get(i)[0] - mRDT.topLinePosition) < mRDT.lineSearchWidth) {
+                    Log.d(TAG,"TopLineHueRange size "+mRDT.topLineHueRange.size());
                     if (mRDT.topLineHueRange.size() > 0) {
                         for (double[] range: mRDT.topLineHueRange) {
                             topLine = topLine || (range[0] <= avgHues[(int)peaks.get(i)[0]] &&  range[1] <= avgHues[(int)peaks.get(i)[0]]);
@@ -1068,6 +1080,7 @@ public class ImageProcessor {
                         }
                     }
                 } else if (Math.abs(peaks.get(i)[0] - mRDT.middleLinePosition) < mRDT.lineSearchWidth) {
+                    Log.d(TAG,"MiddleLineHueRange size "+mRDT.middleLineHueRange.size());
                     if (mRDT.middleLineHueRange.size() > 0) {
                         for (double[] range: mRDT.middleLineHueRange) {
                             middleLine = middleLine || (range[0] <= avgHues[(int)peaks.get(i)[0]] &&  range[1] <= avgHues[(int)peaks.get(i)[0]]);

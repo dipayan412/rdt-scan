@@ -281,6 +281,8 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
             // Check that an image is available
             final Image image = reader.acquireLatestImage();
+            Log.d(TAG,"Image Height " +image.getHeight()+" Image Width "+ image.getWidth());
+
             if (image == null)
                 return;
             if (imageQueue.size() > 0) {

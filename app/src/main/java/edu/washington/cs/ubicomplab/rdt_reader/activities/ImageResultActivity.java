@@ -25,6 +25,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -111,7 +112,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("topLine")) {
             boolean topLine = intent.getBooleanExtra("topLine", false);
             TextView topLineTextView = findViewById(R.id.topLineTextView);
-            topLineTextView.setText(String.format("%s", topLine ? "True" : "False"));
+            topLineTextView.setText(String.format("%.1f",peaks.get(0)[1]));
+            //topLineTextView.setText(String.format("%s", topLine ? "True" : "False"));
         }
         if (intent.hasExtra("topLineName")) {
             String topLineName = intent.getStringExtra("topLineName");
@@ -123,7 +125,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("middleLine")) {
             boolean middleLine = intent.getBooleanExtra("middleLine", false);
             TextView middleLineTextView = findViewById(R.id.middleLineTextView);
-            middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
+            middleLineTextView.setText(String.format("%.1f",(peaks.get(1)[1])));
+            //middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
         }
         if (intent.hasExtra("middleLineName")) {
             String middleLineName = intent.getStringExtra("middleLineName");
@@ -136,7 +139,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             boolean bottomLine = intent.getBooleanExtra("bottomLine", false);
             TextView bottomLineTextView = findViewById(R.id.bottomLineTextView);
             bottomLineTextView.setVisibility(View.VISIBLE);
-            bottomLineTextView.setText(String.format("%s", bottomLine ? "True" : "False"));
+            bottomLineTextView.setText("");
+            //bottomLineTextView.setText(String.format("%s", bottomLine ? "True" : "False"));
         }
         if (numberOfLines > 2 &&  intent.hasExtra("bottomLineName")) {
             String bottomLineName = intent.getStringExtra("bottomLineName");
