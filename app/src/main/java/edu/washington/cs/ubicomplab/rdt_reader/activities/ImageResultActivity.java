@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -23,6 +24,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.lang.reflect.Array;
@@ -49,6 +52,9 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
     Bitmap mBitmapToSave;
     byte[] capturedByteArray, windowByteArray;
     boolean isImageSaved = false;
+    Bitmap resultimageBitMap;
+    Bitmap windowimageBitMap;
+    String resultString;
 
     // Capture time variable
     long timeTaken = 0;
@@ -77,13 +83,15 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         Bundle args = intent.getBundleExtra("BUNDLE");
         ArrayList<double[]> peaks = (ArrayList<double[]>) args.getSerializable("ARRAYLIST");
 
+        resultString=String.format("Control %.1f, Test %.1f",peaks.get(0)[1],peaks.get(1)[1]);
         // Captured image
         if (intent.hasExtra("captured")) {
             capturedByteArray = intent.getExtras().getByteArray("captured");
             mBitmapToSave = BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
 
             ImageView resultImageView = findViewById(R.id.RDTImageView);
-            resultImageView.setImageBitmap(BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length));
+            resultimageBitMap=BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
+            resultImageView.setImageBitmap(resultimageBitMap);
         }
 
         // Enhanced image
@@ -92,7 +100,9 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             mBitmapToSave = BitmapFactory.decodeByteArray(windowByteArray, 0, windowByteArray.length);
 
             ImageView windowImageView = findViewById(R.id.WindowImageView);
-            windowImageView.setImageBitmap(BitmapFactory.decodeByteArray(windowByteArray, 0, windowByteArray.length));
+            windowimageBitMap=BitmapFactory.decodeByteArray(windowByteArray,0,windowByteArray.length);
+            windowImageView.setImageBitmap(windowimageBitMap);
+
         }
 
         // Capture time
@@ -210,10 +220,23 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
                 // Save the enhanced image
                 filePath = sdIconStorageDir.toString() +
                         String.format("/%s-%08dms_cropped.jpg", sdf.format(new Date()), timeTaken);
+
+                ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
+                windowimageBitMap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
+
+
                 fileOutputStream = new FileOutputStream(filePath);
-                fileOutputStream.write(windowByteArray);
+                fileOutputStream.write(windowimagestream.toByteArray());
+                //fileOutputStream.write(windowByteArray);
                 fileOutputStream.flush();
                 fileOutputStream.close();
+
+                ExifInterface windowExif=new ExifInterface(filePath);
+                windowExif.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, resultString);
+                windowExif.saveAttributes();
+
+                Log.d("ImageResultActivity",windowExif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION));
+
 
                 // Send broadcast to OS so that the files appear immediately in the file system
                 sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + filePath)));
@@ -222,7 +245,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
                 Toast.makeText(this,"Image is successfully saved!", Toast.LENGTH_SHORT).show();
                 isImageSaved = true;
             } catch (Exception e) {
-                Log.w("TAG", "Error saving image file: " + e.getMessage());
+                Log.w("TAG", "Error saving image file: " + Log.getStackTraceString(e));
             }
         } else if (view.getId() == R.id.doneButton) {
             Intent data = new Intent();
