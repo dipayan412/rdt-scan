@@ -228,7 +228,9 @@ public final class ImageUtil {
                 // Peak finding
                 if (curr < max_val-delta) {
                     if (max_idx != Integer.MIN_VALUE)
-                        peaks.add(new double[]{max_idx, max_val, measurePeakWidth(arr, max_idx, true)});
+                        peaks.add(new double[]{max_idx, max_val,
+                                measurePeakWidth(arr, max_idx, true),
+                                peakLinearBaselineCorrected(arr,max_idx)});
                     min_val = curr;
                     min_idx = i;
                     lookingForMax = false;
@@ -237,7 +239,9 @@ public final class ImageUtil {
                 // Trough finding
                 if (curr > min_val+delta) {
                     if (min_idx != Integer.MIN_VALUE)
-                        troughs.add(new double[]{min_idx, min_val, measurePeakWidth(arr, min_idx, false)});
+                        troughs.add(new double[]{min_idx, min_val,
+                                measurePeakWidth(arr, min_idx, false),
+                                peakLinearBaselineCorrected(arr,min_idx)});
                     max_val = curr;
                     max_idx = i;
                     lookingForMax = true;
@@ -247,6 +251,50 @@ public final class ImageUtil {
 
         // Return peaks or valleys
         return (max ? peaks : troughs);
+    }
+
+    /**
+     * Calculate baseline corrected peak height
+     * 08/21/2020
+     * Note: This function try to compensate for baseline variations by subtracting it from detected peaks.
+     * @param averageLine: the array of 1d profile of test strip
+     * @param peakLoc: the minimum peak/trough height
+     * @return double peakHeight after linear baseline correction
+     */
+    public static double peakLinearBaselineCorrected(double[] averageLine, int peakLoc) {
+
+        // find the upper and lower bounds for the peak
+        int loc_lower=peakLoc-15;
+        int loc_upper=peakLoc+15;
+
+        // Initialize peak tracking variables
+        double first_val = averageLine[0];
+        double last_val = averageLine[averageLine.length-1];
+        double yGap=0;
+        double xGap=30;
+        double xPeaktoLower=15;
+        double yBase=0;
+        double peak=averageLine[peakLoc];
+
+        // calculate baseline and peak height
+        if (loc_lower>=0 && loc_upper<averageLine.length-1) {
+            yGap=averageLine[loc_upper]-averageLine[loc_lower];
+            yBase=averageLine[loc_lower];
+        } else if (loc_lower <= 0) {
+            yGap = averageLine[loc_upper] - first_val;
+            xGap= loc_upper;
+            xPeaktoLower=peakLoc;
+            yBase = first_val;
+        } else if (loc_upper>=averageLine.length){
+            yGap=last_val-averageLine[loc_lower];
+            xGap=averageLine.length-loc_lower;
+            yBase = averageLine[loc_lower];
+        }
+        double baselineatPeak=(xPeaktoLower)/xGap*yGap+yBase;
+        double peakSubBaseline=Math.abs(peak-baselineatPeak);
+
+        // Return peaks or valleys
+        return peakSubBaseline;
     }
 
     /**
