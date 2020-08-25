@@ -298,6 +298,7 @@ public class ImageProcessor {
                     goodMatches.add(m);
             }
         }
+        Log.d("ImageProcessor","Number of Good Matches "+Integer.toString(goodMatches.size()));
         MatOfDMatch goodMatchesMat = new MatOfDMatch();
         goodMatchesMat.fromList(goodMatches);
 
