@@ -24,7 +24,7 @@ public final class Constants {
 
     // Default settings
     public static String LANGUAGE = "en";
-    public static final String DEFAULT_RDT_NAME = "malaria-carestart";
+    public static final String DEFAULT_RDT_NAME = "covid19-ghl";
     public static final String CONFIG_FILE_NAME = "config.json";
     public static final String DEFAULT_TOP_LINE_NAME = "Top Line Name";
     public static final String DEFAULT_MIDDLE_LINE_NAME = "Middle Line Name";
