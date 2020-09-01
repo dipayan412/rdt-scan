@@ -222,15 +222,15 @@ public final class ImageUtil {
                 min_val = curr;
                 min_idx = i;
             }
-
+            double peakWidth=0;
             // Determine if local optima has been found
             if (lookingForMax) {
                 // Peak finding
                 if (curr < max_val-delta) {
                     if (max_idx != Integer.MIN_VALUE)
-                        peaks.add(new double[]{max_idx, max_val,
-                                measurePeakWidth(arr, max_idx, true),
-                                peakLinearBaselineCorrected(arr,max_idx)});
+                        peakWidth=measurePeakWidth(arr, max_idx, true);
+                        peaks.add(new double[]{max_idx, max_val,peakWidth,
+                                peakLinearBaselineCorrected(arr,peakWidth,max_idx)});
                     min_val = curr;
                     min_idx = i;
                     lookingForMax = false;
@@ -239,9 +239,9 @@ public final class ImageUtil {
                 // Trough finding
                 if (curr > min_val+delta) {
                     if (min_idx != Integer.MIN_VALUE)
-                        troughs.add(new double[]{min_idx, min_val,
-                                measurePeakWidth(arr, min_idx, false),
-                                peakLinearBaselineCorrected(arr,min_idx)});
+                        peakWidth=measurePeakWidth(arr, min_idx, false);
+                        troughs.add(new double[]{min_idx, min_val,peakWidth,
+                                peakLinearBaselineCorrected(arr,peakWidth,min_idx)});
                     max_val = curr;
                     max_idx = i;
                     lookingForMax = true;
@@ -261,11 +261,16 @@ public final class ImageUtil {
      * @param peakLoc: the minimum peak/trough height
      * @return double peakHeight after linear baseline correction
      */
-    public static double peakLinearBaselineCorrected(double[] averageLine, int peakLoc) {
+    public static double peakLinearBaselineCorrected(double[] averageLine,double peakWidth, int peakLoc) {
 
         // find the upper and lower bounds for the peak
-        int loc_lower=peakLoc-15;
-        int loc_upper=peakLoc+15;
+        int halfWidth=(int)peakWidth/2;
+        // if halfwidth is less than 0, then there is no peak detected, so return 0
+        if (halfWidth<=0){
+            return 0;
+        }
+        int loc_lower=peakLoc-halfWidth;
+        int loc_upper=peakLoc+halfWidth;
 
         // Initialize peak tracking variables
         double first_val = averageLine[0];
@@ -291,10 +296,9 @@ public final class ImageUtil {
             yBase = averageLine[loc_lower];
         }
         double baselineatPeak=(xPeaktoLower)/xGap*yGap+yBase;
-        double peakSubBaseline=Math.abs(peak-baselineatPeak);
 
-        // Return peaks or valleys
-        return peakSubBaseline;
+        // Return peakheight
+        return Math.abs(peak-baselineatPeak);
     }
 
     /**
