@@ -18,6 +18,10 @@ import android.graphics.ImageFormat;
 import android.graphics.Matrix;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCaptureSession;
 import android.hardware.camera2.CameraCharacteristics;
@@ -128,6 +132,9 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
     final Object focusStateLock = new Object();
     final BlockingQueue<Image> imageQueue = new ArrayBlockingQueue<>(1);
     private CaptureRequest.Builder mPreviewRequestBuilder;
+
+    private SensorManager sensorManager;
+    private Sensor sensor;
 
     /**
      * An Enumeration object that acts as a finite-state machine for image quality checking
@@ -387,7 +394,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
             // If all the quality check were passed, interpret the test result
             RDTInterpretationResult interpretationResult = null;
-            if (captureResult.allChecksPassed) {
+            if (captureResult.allChecksPassed && isFlat) {
                 interpretationResult = processor.interpretRDT(captureResult.resultMat,
                         captureResult.boundary);
                 image.close();
@@ -449,7 +456,38 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
         // Keep track of how long it takes for image capture for benchmarking purposes
         timeTaken = System.currentTimeMillis();
+
+        sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
+        sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        sensorManager.registerListener(sensorEventListener, sensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
+
+    float[] g = new float[3];
+    boolean isFlat = false;
+    SensorEventListener sensorEventListener = new SensorEventListener() {
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            g = event.values.clone();
+            double normOfG = Math.sqrt(g[0] * g[0] + g[1] * g[1] + g[2] * g[2]);
+
+            g[0] = (float) (g[0] / normOfG);
+            g[1] = (float) (g[1] / normOfG);
+            g[2] = (float) (g[2] / normOfG);
+            int inclination = (int) Math.round(Math.toDegrees(Math.acos(g[2])));
+            int rotation = (int) Math.round(Math.toDegrees(Math.atan2(g[0], g[1])));
+            if (inclination < 5) {
+                isFlat = true;
+            } else {
+                isFlat = false;
+            }
+//            Log.d("onSensorChanged", inclination + "\t" + rotation + "\t" + isFlat);
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+        }
+    };
 
     /**
      * Initializes UI elements and checks permissions
@@ -896,8 +934,9 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
         // Update on-screen feedback
         if (currFocusState == FocusState.FOCUSED) {
             mInstructionText.setText(getResources().getString(R.string.instruction_pos));
+            String isFlatStr = isFlat ? "Flat" : "Not flat";
             String message = String.format(getResources().getString(R.string.quality_msg_format),
-                    "failed", "failed", "failed", "failed");
+                    "failed", "failed", "failed", "failed", isFlatStr);
             mImageQualityFeedbackView.setText(Html.fromHtml(message));
         } else if (currFocusState == FocusState.INACTIVE) {
             mInstructionText.setText(getResources().getString(R.string.instruction_pos));
@@ -939,7 +978,8 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
             // Get the summary of the quality checks
             String[] qChecks = processor.getSummaryText(exposureResult, isSharp, isCentered, sizeResult, isOriented, isGlared);
-            String message = String.format(getResources().getString(R.string.quality_msg_format_text), qChecks[0], qChecks[1], qChecks[2], qChecks[3]);
+            String isFlatStr = isFlat ? "Flat" : "Not flat";
+            String message = String.format(getResources().getString(R.string.quality_msg_format_text), qChecks[0], qChecks[1], qChecks[2], qChecks[3], isFlatStr);
             mImageQualityFeedbackView.setText(Html.fromHtml(message));
         } else if (currFocusState == FocusState.INACTIVE) {
             mInstructionText.setText(getResources().getString(R.string.instruction_pos));

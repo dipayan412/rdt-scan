@@ -82,6 +82,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 
         Bundle args = intent.getBundleExtra("BUNDLE");
         ArrayList<double[]> peaks = (ArrayList<double[]>) args.getSerializable("ARRAYLIST");
+        double[] avgIntensities = (double[]) args.getSerializable("avgIntensities");
 
         resultString=String.format("Control %.1f, Test %.1f",peaks.get(0)[1],peaks.get(1)[1]);
         // Captured image
@@ -122,7 +123,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("topLine")) {
             boolean topLine = intent.getBooleanExtra("topLine", false);
             TextView topLineTextView = findViewById(R.id.topLineTextView);
-            topLineTextView.setText(String.format("%.1f",peaks.get(0)[3]));
+            topLineTextView.setText(peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f",(peaks.get(0)[3])) : "");
             //topLineTextView.setText(String.format("%s", topLine ? "True" : "False"));
         }
         if (intent.hasExtra("topLineName")) {
@@ -135,7 +136,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("middleLine")) {
             boolean middleLine = intent.getBooleanExtra("middleLine", false);
             TextView middleLineTextView = findViewById(R.id.middleLineTextView);
-            middleLineTextView.setText(String.format("%.1f",(peaks.get(1)[3])));
+            middleLineTextView.setText(peaks.size() > 1 ? String.format("%.1f",(peaks.get(1)[3])) : "");
             //middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
         }
         if (intent.hasExtra("middleLineName")) {

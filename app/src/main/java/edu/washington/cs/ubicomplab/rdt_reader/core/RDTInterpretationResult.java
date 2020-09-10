@@ -28,6 +28,7 @@ public class RDTInterpretationResult {
     public boolean hasTooMuchBlood;
     public int numberOfLines;
     public ArrayList<double[]> peaks;
+    public double[] avgIntensities;
 
     public RDTInterpretationResult() {
         topLine = false;
@@ -45,7 +46,7 @@ public class RDTInterpretationResult {
 
     public RDTInterpretationResult(Mat resultMat, boolean topLine, boolean middleLine, boolean bottomLine,
                                    String topLineName, String middleLineName, String bottomLineName,
-                                   boolean hasTooMuchBlood, int numberOfLines, ArrayList<double[]> peaks){
+                                   boolean hasTooMuchBlood, int numberOfLines, ArrayList<double[]> peaks, double[] avgIntensities){
         this.resultMat = resultMat;
         this.topLine = topLine;
         this.middleLine = middleLine;
@@ -56,6 +57,7 @@ public class RDTInterpretationResult {
         this.hasTooMuchBlood = hasTooMuchBlood;
         this.numberOfLines = numberOfLines;
         this.peaks = peaks;
+        this.avgIntensities = avgIntensities;
         // Convert the image to a Bitmap so it can be displayed with Android
         if (resultMat.cols() > 0 && resultMat.rows() > 0) {
             this.resultBitmap = Bitmap.createBitmap(resultMat.cols(), resultMat.rows(),

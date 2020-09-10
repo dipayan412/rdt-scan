@@ -125,6 +125,7 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
 
                 Bundle args = new Bundle();
                 args.putSerializable("ARRAYLIST",(Serializable)rdtInterpretationResult.peaks);
+                args.putSerializable("avgIntensities",(Serializable)rdtInterpretationResult.avgIntensities);
                 i.putExtra("BUNDLE",args);
 
                 startActivity(i);

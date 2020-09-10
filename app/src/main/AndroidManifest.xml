@@ -64,6 +64,7 @@
             android:name=".activities.ImageResultActivity"
             android:configChanges="keyboardHidden|orientation"
             android:noHistory="true"
+            android:theme="@style/Theme.AppCompat.Light"
             android:screenOrientation="portrait" />
     </application>
 
