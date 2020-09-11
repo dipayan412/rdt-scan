@@ -250,8 +250,9 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             // Save both the full image and the enhanced image
             try {
                 // Save the full image
+                // removed timetaken from filename, added sampleID at beginning of filename wwang
                 String filePath = sdIconStorageDir.toString() +
-                        String.format("/%s-%08dms_full.jpg", sdf.format(new Date()), timeTaken);
+                        String.format("/%s-%s_full.jpg",sampleID, sdf.format(new Date()));
                 FileOutputStream fileOutputStream = new FileOutputStream(filePath);
                 fileOutputStream.write(capturedByteArray);
                 fileOutputStream.flush();
@@ -259,7 +260,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 
                 // Save the enhanced image
                 filePath = sdIconStorageDir.toString() +
-                        String.format("/%s-%08dms_cropped.jpg", sdf.format(new Date()), timeTaken);
+                        String.format("/%s-%s_cropped.jpg", sampleID,sdf.format(new Date()));
 
                 ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
                 windowimageBitMap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
