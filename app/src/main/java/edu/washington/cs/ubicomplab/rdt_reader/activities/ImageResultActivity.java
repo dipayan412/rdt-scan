@@ -84,7 +84,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         ArrayList<double[]> peaks = (ArrayList<double[]>) args.getSerializable("ARRAYLIST");
         double[] avgIntensities = (double[]) args.getSerializable("avgIntensities");
 
-        resultString=String.format("Control %.1f, Test %.1f",peaks.get(0)[1],peaks.get(1)[1]);
+        resultString = "" + (peaks.size() > 0 && peaks.get(0) != null ? "Control " + peaks.get(0)[1] + ", ": "");
+        resultString = "" + (peaks.size() > 1 ? "Test " + peaks.get(1)[1] : "");
         // Captured image
         if (intent.hasExtra("captured")) {
             capturedByteArray = intent.getExtras().getByteArray("captured");
