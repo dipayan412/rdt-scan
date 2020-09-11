@@ -8,18 +8,23 @@
 
 package edu.washington.cs.ubicomplab.rdt_reader.activities;
 
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.media.ExifInterface;
+import android.support.media.ExifInterface;
 import android.net.Uri;
+import android.support.design.widget.TextInputEditText;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -106,12 +111,12 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 
         }
 
-        // Capture time
-        if (intent.hasExtra("timeTaken")) {
-            timeTaken = intent.getLongExtra("timeTaken", 0);
-            TextView timeTextView = findViewById(R.id.TimeTextView);
-            timeTextView.setText(String.format("%.2f seconds", timeTaken/1000.0));
-        }
+//        // Capture time
+//        if (intent.hasExtra("timeTaken")) {
+//            timeTaken = intent.getLongExtra("timeTaken", 0);
+//            TextView timeTextView = findViewById(R.id.TimeTextView);
+//            timeTextView.setText(String.format("%.2f seconds", timeTaken/1000.0));
+//        }
 
         //Number of lines
         int numberOfLines = 2;
@@ -187,6 +192,28 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         startActivity(intent);
     }
 
+    @Override
+    public boolean dispatchTouchEvent(MotionEvent ev) {
+        View view = getCurrentFocus();
+        boolean ret = super.dispatchTouchEvent(ev);
+
+        if (view instanceof EditText) {
+            View w = getCurrentFocus();
+            int [] scrcoords = new int[2];
+            w.getLocationOnScreen(scrcoords);
+            float x = ev.getRawX() + w.getLeft() - scrcoords[0];
+            float y = ev.getRawY() + w.getTop() - scrcoords[1];
+
+            if (ev.getAction() == MotionEvent.ACTION_UP
+                    && (x < w.getLeft() || x >= w.getRight()
+                    || y < w.getTop() || y > w.getBottom()) ) {
+                InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(getWindow().getCurrentFocus().getWindowToken(), 0);
+            }
+        }
+        return ret;
+    }
+
     /**
      * The listener for all of the Activity's buttons
      * @param view the button that was selected
@@ -195,6 +222,17 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
     public void onClick(View view) {
         // Save the photo locally on the user's device
         if (view.getId() == R.id.saveButton) {
+
+            // Test whether the inputSampleID field is empty. - wwang
+            TextInputEditText inputSampleID = findViewById(R.id.sampleID_input);
+            String sampleID=inputSampleID.getText().toString();
+
+            if (sampleID.trim().equals("")) {
+                inputSampleID.setError("Sample ID is required!");
+                inputSampleID.setHint("Sample ID can not be empty. Input a sample ID");
+                return;
+            }
+
             // Skip if the image is already saved
             if (isImageSaved) {
                 Toast.makeText(this,"Image is already saved.", Toast.LENGTH_LONG).show();
@@ -233,7 +271,11 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
                 fileOutputStream.close();
 
                 ExifInterface windowExif=new ExifInterface(filePath);
-                windowExif.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, resultString);
+
+
+                // save sample metadata to image file - wwang Note this might not work with SDK <24
+                windowExif.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, sampleID);
+                windowExif.setAttribute(ExifInterface.TAG_USER_COMMENT,resultString);
                 windowExif.saveAttributes();
 
                 Log.d("ImageResultActivity",windowExif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION));
@@ -245,6 +287,10 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
                 // Notify the user that the image has been saved
                 Toast.makeText(this,"Image is successfully saved!", Toast.LENGTH_SHORT).show();
                 isImageSaved = true;
+
+                // clear sampleID text box - wwang
+                inputSampleID.setText("");
+
             } catch (Exception e) {
                 Log.w("TAG", "Error saving image file: " + Log.getStackTraceString(e));
             }
