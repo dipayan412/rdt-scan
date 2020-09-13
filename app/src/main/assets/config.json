@@ -111,12 +111,12 @@
     "CHECK_GLARE": false
   },
   "covid19-ghl": {
-    "REF_IMG": "covid19_ghl_ref_v1",
+    "REF_IMG": "covid19_ghl_ref_v3",
     "VIEW_FINDER_SCALE": 0.6,
-    "RESULT_WINDOW_TOP_LEFT": [302,71],
-    "RESULT_WINDOW_BOTTOM_RIGHT": [413,94],
-    "TOP_LINE_POSITION": [333,83],
-    "MIDDLE_LINE_POSITION": [384,83],
+    "RESULT_WINDOW_TOP_LEFT": [324,91],
+    "RESULT_WINDOW_BOTTOM_RIGHT": [433,113],
+    "TOP_LINE_POSITION": [351,100],
+    "MIDDLE_LINE_POSITION": [403,100],
     "TOP_LINE_NAME": "Control",
     "MIDDLE_LINE_NAME": "Test",
     "LINE_INTENSITY": 85,
