@@ -28,8 +28,8 @@ import edu.washington.cs.ubicomplab.rdt_reader.core.Constants;
 /**
  * Fragment view for allowing the end-user to modify the quality check thresholds
  */
-public class SettingsDialogFragment extends DialogFragment
-        implements RadioGroup.OnCheckedChangeListener {
+public class SettingsDialogFragment extends DialogFragment {
+//        implements RadioGroup.OnCheckedChangeListener {
 
     // Threshold setting UI elements
     private SeekBar mSharpnessBar;
@@ -39,10 +39,10 @@ public class SettingsDialogFragment extends DialogFragment
     private SeekBar mSizeBar;
 
     // Language setting UI elements
-    RadioButton mEnRadioButton;
-    RadioButton mFrRadioButton;
-    RadioButton mBmRadioButton;
-    RadioGroup mLangGroup;
+//    RadioButton mEnRadioButton;
+//    RadioButton mFrRadioButton;
+//    RadioButton mBmRadioButton;
+//    RadioGroup mLangGroup;
 
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
@@ -59,10 +59,10 @@ public class SettingsDialogFragment extends DialogFragment
         mPositionBar = dialogView.findViewById(R.id.positionBar);
         mSizeBar = dialogView.findViewById(R.id.sizeBar);
 
-        mEnRadioButton = dialogView.findViewById(R.id.enButton);
-        mFrRadioButton = dialogView.findViewById(R.id.frButton);
-        mBmRadioButton = dialogView.findViewById(R.id.bmButton);
-        mLangGroup = dialogView.findViewById(R.id.langGroup);
+//        mEnRadioButton = dialogView.findViewById(R.id.enButton);
+//        mFrRadioButton = dialogView.findViewById(R.id.frButton);
+//        mBmRadioButton = dialogView.findViewById(R.id.bmButton);
+//        mLangGroup = dialogView.findViewById(R.id.langGroup);
 
         // Set the initial values for the UI elements
         mSharpnessBar.setMax(100);
@@ -76,13 +76,13 @@ public class SettingsDialogFragment extends DialogFragment
         mSizeBar.setMax(20);
         mSizeBar.setProgress((int) (1/Constants.SIZE_THRESHOLD));
 
-        mLangGroup.setOnCheckedChangeListener(this);
-        if (Constants.LANGUAGE.equals("fr"))
-            mFrRadioButton.setChecked(true);
-        else if (Constants.LANGUAGE.equals("en"))
-            mEnRadioButton.setChecked(true);
-        else if (Constants.LANGUAGE.equals("bm"))
-            mBmRadioButton.setChecked(true);
+//        mLangGroup.setOnCheckedChangeListener(this);
+//        if (Constants.LANGUAGE.equals("fr"))
+//            mFrRadioButton.setChecked(true);
+//        else if (Constants.LANGUAGE.equals("en"))
+//            mEnRadioButton.setChecked(true);
+//        else if (Constants.LANGUAGE.equals("bm"))
+//            mBmRadioButton.setChecked(true);
 
         // Inflate and set the layout for the dialog
         builder.setTitle(getString(R.string.settings))
@@ -102,28 +102,28 @@ public class SettingsDialogFragment extends DialogFragment
         return builder.create();
     }
 
-    /**
-     * Update the language settings based on radio button selection
-     * @param radioGroup: the radio group
-     * @param i: the ID of the element that was selected
-     */
-    @Override
-    public void onCheckedChanged(RadioGroup radioGroup, int i) {
-        switch (i) {
-            case R.id.enButton:
-                Constants.LANGUAGE = "en";
-                break;
-            case R.id.frButton:
-                Constants.LANGUAGE = "fr";
-                break;
-            case R.id.bmButton:
-                Constants.LANGUAGE = "bm";
-                break;
-            default:
-                Constants.LANGUAGE = "en";
-                break;
-        }
-    }
+//    /**
+//     * Update the language settings based on radio button selection
+//     * @param radioGroup: the radio group
+//     * @param i: the ID of the element that was selected
+//     */
+//    @Override
+//    public void onCheckedChanged(RadioGroup radioGroup, int i) {
+//        switch (i) {
+//            case R.id.enButton:
+//                Constants.LANGUAGE = "en";
+//                break;
+//            case R.id.frButton:
+//                Constants.LANGUAGE = "fr";
+//                break;
+//            case R.id.bmButton:
+//                Constants.LANGUAGE = "bm";
+//                break;
+//            default:
+//                Constants.LANGUAGE = "en";
+//                break;
+//        }
+//    }
 
     /**
      * Update the constants based on user input
