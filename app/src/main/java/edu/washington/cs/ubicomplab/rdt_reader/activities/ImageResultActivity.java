@@ -250,10 +250,13 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
                 Log.w("TAG", "Error saving image file: " + Log.getStackTraceString(e));
             }
         } else if (view.getId() == R.id.doneButton) {
-            Intent data = new Intent();
-            data.putExtra("RDTCaptureByteArray", capturedByteArray);
-            setResult(RESULT_OK, data);
-            finish();
+//            Intent data = new Intent();
+//            data.putExtra("RDTCaptureByteArray", capturedByteArray);
+//            setResult(RESULT_OK, data);
+//            finish();
+
+            Intent intent = new Intent(this, MainActivity.class);
+            startActivity(intent);
         }
     }
 
