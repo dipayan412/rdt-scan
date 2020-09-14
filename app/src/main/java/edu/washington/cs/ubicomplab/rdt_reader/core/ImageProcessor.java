@@ -776,7 +776,7 @@ public class ImageProcessor {
         // result window's location, otherwise use the default rectangle specified by the user
         Rect resultWindowRect = mRDT.hasFiducial ?
                 cropResultWindowWithFiducial(correctedMat, offset) :
-                new Rect(mRDT.resultWindowRect.x + offset, mRDT.resultWindowRect.y + offset, mRDT.resultWindowRect.width, mRDT.resultWindowRect.height);
+                new Rect(mRDT.resultWindowRect.x + offset, mRDT.resultWindowRect.y, mRDT.resultWindowRect.width, mRDT.resultWindowRect.height);
 
         if (resultWindowRect.width == 0 || resultWindowRect.height == 0)
             return new Mat();
