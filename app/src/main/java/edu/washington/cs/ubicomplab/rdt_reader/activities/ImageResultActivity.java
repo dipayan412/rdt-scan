@@ -13,7 +13,7 @@ import android.content.Intent;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.support.media.ExifInterface;
+import android.media.ExifInterface;
 import android.net.Uri;
 import android.support.design.widget.TextInputEditText;
 import android.support.v7.app.AppCompatActivity;
@@ -89,8 +89,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         ArrayList<double[]> peaks = (ArrayList<double[]>) args.getSerializable("ARRAYLIST");
         double[] avgIntensities = (double[]) args.getSerializable("avgIntensities");
 
-        resultString = "" + (peaks.size() > 0 && peaks.get(0) != null ? "Control " + peaks.get(0)[1] + ", ": "");
-        resultString = "" + (peaks.size() > 1 ? "Test " + peaks.get(1)[1] : "");
+        resultString = "" + (peaks.size() > 0 && peaks.get(0) != null ? "Control " + String.format("%.1f", peaks.get(1)[3]) + ", ": "");
+        resultString = "" + (peaks.size() > 1 ? "Test " + String.format("%.1f", peaks.get(1)[3]) : "");
         // Captured image
         if (intent.hasExtra("captured")) {
             capturedByteArray = intent.getExtras().getByteArray("captured");
