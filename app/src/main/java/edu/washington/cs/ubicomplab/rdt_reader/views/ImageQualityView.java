@@ -935,7 +935,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
         if (currFocusState == FocusState.FOCUSED) {
             mInstructionText.setText(getResources().getString(R.string.instruction_pos));
             String checkSymbol = "&#x2713; ";
-            String isFlatStr = isFlat ? checkSymbol + "Flat" : "Not flat";
+            String isFlatStr = isFlat ? checkSymbol + "Flat: passed" : "Flat: failed";
             String message = String.format(getResources().getString(R.string.quality_msg_format),
                     "failed", "failed", "failed", "failed", isFlatStr);
             mImageQualityFeedbackView.setText(Html.fromHtml(message));
@@ -980,7 +980,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             // Get the summary of the quality checks
             String[] qChecks = processor.getSummaryText(exposureResult, isSharp, isCentered, sizeResult, isOriented, isGlared);
             String checkSymbol = "&#x2713; ";
-            String isFlatStr = isFlat ? checkSymbol + "Flat" : "Not flat";
+            String isFlatStr = isFlat ? checkSymbol + "Flat: passed" : "Flat: failed";
             String message = String.format(getResources().getString(R.string.quality_msg_format_text), qChecks[0], qChecks[1], qChecks[2], qChecks[3], isFlatStr);
             mImageQualityFeedbackView.setText(Html.fromHtml(message));
         } else if (currFocusState == FocusState.INACTIVE) {
