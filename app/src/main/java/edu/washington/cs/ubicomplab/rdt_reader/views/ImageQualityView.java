@@ -934,7 +934,8 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
         // Update on-screen feedback
         if (currFocusState == FocusState.FOCUSED) {
             mInstructionText.setText(getResources().getString(R.string.instruction_pos));
-            String isFlatStr = isFlat ? "Flat" : "Not flat";
+            String checkSymbol = "&#x2713; ";
+            String isFlatStr = isFlat ? checkSymbol + "Flat" : "Not flat";
             String message = String.format(getResources().getString(R.string.quality_msg_format),
                     "failed", "failed", "failed", "failed", isFlatStr);
             mImageQualityFeedbackView.setText(Html.fromHtml(message));
