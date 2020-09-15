@@ -129,7 +129,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("topLine")) {
             boolean topLine = intent.getBooleanExtra("topLine", false);
             TextView topLineTextView = findViewById(R.id.topLineTextView);
-            topLineTextView.setText(peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f",(peaks.get(0)[3])) : "");
+            topLineTextView.setText(peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f",(peaks.get(0)[3])) : "no control line");
             //topLineTextView.setText(String.format("%s", topLine ? "True" : "False"));
         }
         if (intent.hasExtra("topLineName")) {
@@ -142,7 +142,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("middleLine")) {
             boolean middleLine = intent.getBooleanExtra("middleLine", false);
             TextView middleLineTextView = findViewById(R.id.middleLineTextView);
-            middleLineTextView.setText(peaks.size() > 1 ? String.format("%.1f",(peaks.get(1)[3])) : "");
+            middleLineTextView.setText(peaks.size() > 1 ? String.format("%.1f",(peaks.get(1)[3])) : "no test line");
             //middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
         }
         if (intent.hasExtra("middleLineName")) {
