@@ -57,5 +57,6 @@
     <string name="preference_file_key">rdt-capture-pref</string>
     <string name="cancel">Cancel</string>
     <string name="too_much_blood_warning">Warning: Blood amount excessive, RDT might not be accurate</string>
+    <string name="input_sampleid">Input SampleID</string>
 
 </resources>
