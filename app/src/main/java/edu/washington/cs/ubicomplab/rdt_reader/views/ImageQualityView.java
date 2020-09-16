@@ -302,7 +302,6 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 image.close();
                 return;
             }
-
             // Add the image to the queue and execute the quality checking
             // process on a different thread
             imageQueue.add(image);
@@ -368,6 +367,9 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
         public void onCaptureCompleted(@NonNull CameraCaptureSession session,
                                        @NonNull CaptureRequest request,
                                        @NonNull TotalCaptureResult result) {
+            int captureISO=result.get(CaptureResult.SENSOR_SENSITIVITY);
+            long captureTime=result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
+            Log.d(TAG,"ISO"+","+captureISO+","+"ExposureTime"+","+captureTime);
             process(result);
         }
     };
@@ -936,8 +938,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             mInstructionText.setText(getResources().getString(R.string.instruction_pos));
             String checkSymbol = "&#x2713; ";
             String isFlatStr = isFlat ? checkSymbol + "Flat: passed" : "Flat: failed";
-            String message = String.format(getResources().getString(R.string.quality_msg_format),
-                    "failed", "failed", "failed", "failed", isFlatStr);
+            String message = String.format(getResources().getString(R.string.quality_msg_format),"failed", "failed", "failed", "failed", isFlatStr);
             mImageQualityFeedbackView.setText(Html.fromHtml(message));
         } else if (currFocusState == FocusState.INACTIVE) {
             mInstructionText.setText(getResources().getString(R.string.instruction_pos));

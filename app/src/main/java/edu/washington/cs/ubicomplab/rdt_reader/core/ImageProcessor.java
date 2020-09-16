@@ -10,11 +10,13 @@ package edu.washington.cs.ubicomplab.rdt_reader.core;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.util.Log;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -83,6 +85,7 @@ public class ImageProcessor {
 
     // Variable to track
     private int mMoveCloserCount = 0;
+    private Bitmap resultWindowBitmap;
 
     /**
      * An Enumeration object for specifying the exposure quality of the image
@@ -772,11 +775,26 @@ public class ImageProcessor {
     private Mat cropResultWindow(Mat inputMat, MatOfPoint2f boundary, int offset) {
         Mat correctedMat = correctPerspective(inputMat, boundary);
 
+        if(temp.cols() == 0 || temp.rows() == 0)
+            correctedMat.assignTo(temp);
+
+//        resultWindowBitmap = Bitmap.createBitmap(correctedMat.width(),correctedMat.height(), Bitmap.Config.ARGB_8888);
+//        Utils.matToBitmap(correctedMat, resultWindowBitmap);
+
         // If fiducials are specified, use them to improve the estimate of the
         // result window's location, otherwise use the default rectangle specified by the user
         Rect resultWindowRect = mRDT.hasFiducial ?
                 cropResultWindowWithFiducial(correctedMat, offset) :
                 new Rect(mRDT.resultWindowRect.x + offset, mRDT.resultWindowRect.y, mRDT.resultWindowRect.width, mRDT.resultWindowRect.height);
+
+        //        Mat temp = new Mat();
+        //        correctedMat.assignTo(temp);
+
+        Imgproc.rectangle(temp, resultWindowRect.tl(), resultWindowRect.br(), new Scalar(155), 1);
+        Imgproc.putText(temp, "" + count, resultWindowRect.tl(), Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(155),1);
+//
+//        resultWindowBitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
+//        Utils.matToBitmap(temp, resultWindowBitmap);
 
         if (resultWindowRect.width == 0 || resultWindowRect.height == 0)
             return new Mat();
@@ -784,6 +802,13 @@ public class ImageProcessor {
         Log.d(TAG, String.format("result rect: %d, %d, %d, %d, %d", resultWindowRect.x, resultWindowRect.y, resultWindowRect.width, resultWindowRect.height, offset));
         // Resize the window so it's the same size as in the template
         correctedMat = new Mat(correctedMat, resultWindowRect);
+
+
+
+//        resultWindowBitmap = Bitmap.createBitmap(correctedMat.width(), correctedMat.height(), Bitmap.Config.ARGB_8888);
+//        Utils.matToBitmap(correctedMat, resultWindowBitmap);
+
+
         if (correctedMat.width() > 0 && correctedMat.height() > 0)
             resize(correctedMat, correctedMat,
                     new Size(mRDT.resultWindowRect.width, mRDT.resultWindowRect.height));
@@ -962,6 +987,8 @@ public class ImageProcessor {
      * @param boundary: the corners of the bounding box around the detected RDT
      * @return an {@link RDTInterpretationResult} indicating the test results
      */
+    Mat temp=new Mat();
+    int count=0;
     public RDTInterpretationResult interpretRDT(Mat inputMat, MatOfPoint2f boundary) {
         Mat resultWindowMat;
 
@@ -991,6 +1018,7 @@ public class ImageProcessor {
 
         int cnt = 0;
         do {
+            count++;
             // Crop the result window
             resultWindowMat = cropResultWindow(inputMat, boundary, offset);
             // Skip if there is no window to interpret
@@ -1173,6 +1201,9 @@ public class ImageProcessor {
 
             cnt++;
         } while (!tuned && cnt < 10);
+
+        resultWindowBitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(temp, resultWindowBitmap);
 
         return new RDTInterpretationResult(resultWindowMat,
                 topLine, middleLine, bottomLine,
