@@ -2,9 +2,9 @@
 <resources>
     <string-array name="spinnerItems">
         <item>covid19-ghl</item>
-        <item>malariapf-carestart</item>
+        <!--<item>malariapf-carestart</item>
         <item>malaria-carestart</item>
-        <!--<item>covid19-jalmedical</item>
+        <item>covid19-jalmedical</item>
         <item>covid19-wondfo</item>
         <item>covid19-modified</item>
         <item>malaria-experimental</item>
