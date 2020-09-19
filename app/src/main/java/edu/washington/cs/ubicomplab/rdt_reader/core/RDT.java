@@ -4,6 +4,8 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import org.json.JSONArray;
@@ -11,6 +13,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.Point;
@@ -25,8 +28,11 @@ import org.opencv.xfeatures2d.SIFT;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
 
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.SHARPNESS_GAUSSIAN_BLUR_WINDOW;
+import static java.util.stream.Collectors.toList;
 import static org.opencv.imgproc.Imgproc.cvtColor;
 
 /**
@@ -59,6 +65,7 @@ public class RDT {
     public double refImgSharpness;
     public Mat refDescriptor;
     public MatOfKeyPoint refKeypoints;
+    ArrayList<KeyPoint> goodkpsList;
     public SIFT detector;
     public BFMatcher matcher;
     //Glare check variables
@@ -66,6 +73,7 @@ public class RDT {
 
     public boolean rotated = false;
 
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public RDT(Context context, String rdtName) {
         try {
             // Read config.json
@@ -169,13 +177,33 @@ public class RDT {
             // Load the reference image's features
             refDescriptor = new Mat();
             refKeypoints = new MatOfKeyPoint();
+            MatOfKeyPoint goodkpMat=new MatOfKeyPoint();
+
             detector = SIFT.create();
             matcher = BFMatcher.create(BFMatcher.BRUTEFORCE, false);
             detector.detectAndCompute(refImg, new Mat(), refKeypoints, refDescriptor);
 
+
+           goodkpsList= new ArrayList<KeyPoint> (refKeypoints.toList());
+
+            int i=0;
+            Iterator<KeyPoint> iter=goodkpsList.listIterator();
+            while (iter.hasNext()){
+                KeyPoint kp=iter.next();
+                Log.d("RDT","response "+String.valueOf(kp.response));
+                if(kp.response < 0.04){
+                    i++;
+                    iter.remove();
+                    Log.d("RDT","goodkpsList size"+goodkpsList.size());
+                }
+            }
+
+            goodkpMat.fromList(goodkpsList);
+            Log.d("RDT","iMADE "+String.valueOf(i));
+            Log.d("RDT","JMAD "+String.valueOf(goodkpsList.size()));
             Mat refKeyPointImg = refImg;
             Bitmap refKeyPointBitMap = Bitmap.createBitmap(refImg.width(), refImg.height(), Bitmap.Config.ARGB_8888);
-            Features2d.drawKeypoints(refImg,refKeypoints,refKeyPointImg,new Scalar(0,0,255),Features2d.DRAW_RICH_KEYPOINTS);
+            Features2d.drawKeypoints(refImg,goodkpMat,refKeyPointImg,new Scalar(0,0,255),Features2d.DRAW_RICH_KEYPOINTS);
             Utils.matToBitmap(refKeyPointImg, refKeyPointBitMap);
             Log.d("RDT","Trap breakpoint");
 

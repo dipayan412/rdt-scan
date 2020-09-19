@@ -288,7 +288,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
             // Check that an image is available
             final Image image = reader.acquireLatestImage();
-            Log.d(TAG,"Image Height " +image.getHeight()+" Image Width "+ image.getWidth());
+            //Log.d(TAG,"Image Height " +image.getHeight()+" Image Width "+ image.getWidth());
 
             if (image == null)
                 return;
@@ -369,7 +369,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                                        @NonNull TotalCaptureResult result) {
             int captureISO=result.get(CaptureResult.SENSOR_SENSITIVITY);
             long captureTime=result.get(CaptureResult.SENSOR_EXPOSURE_TIME);
-            Log.d(TAG,"ISO"+","+captureISO+","+"ExposureTime"+","+captureTime);
+            //Log.d(TAG,"ISO"+","+captureISO+","+"ExposureTime"+","+captureTime);
             process(result);
         }
     };
