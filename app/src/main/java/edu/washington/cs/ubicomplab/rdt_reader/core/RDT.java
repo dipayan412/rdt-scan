@@ -4,6 +4,7 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -14,8 +15,10 @@ import org.opencv.core.Mat;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
+import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.features2d.BFMatcher;
+import org.opencv.features2d.Features2d;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.xfeatures2d.SIFT;
 
@@ -169,6 +172,13 @@ public class RDT {
             detector = SIFT.create();
             matcher = BFMatcher.create(BFMatcher.BRUTEFORCE, false);
             detector.detectAndCompute(refImg, new Mat(), refKeypoints, refDescriptor);
+
+            Mat refKeyPointImg = refImg;
+            Bitmap refKeyPointBitMap = Bitmap.createBitmap(refImg.width(), refImg.height(), Bitmap.Config.ARGB_8888);
+            Features2d.drawKeypoints(refImg,refKeypoints,refKeyPointImg,new Scalar(0,0,255),Features2d.DRAW_RICH_KEYPOINTS);
+            Utils.matToBitmap(refKeyPointImg, refKeyPointBitMap);
+            Log.d("RDT","Trap breakpoint");
+
         } catch (Exception ex) {
             ex.printStackTrace();
         }
