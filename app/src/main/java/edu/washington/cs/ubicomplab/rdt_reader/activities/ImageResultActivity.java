@@ -199,6 +199,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        // clear sampleID text box - wwang
+        inputSampleID.setText("");
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
     }
@@ -244,6 +246,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 //            data.putExtra("RDTCaptureByteArray", capturedByteArray);
 //            setResult(RESULT_OK, data);
 //            finish();
+            // clear sampleID text box - wwang
+            inputSampleID.setText("");
 
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
@@ -255,11 +259,11 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
      */
     public void saveImageFile(String sampleID) {
 
-        // Skip if the image is already saved
-        if (isImageSaved) {
-            Toast.makeText(this,"Image is already saved.", Toast.LENGTH_LONG).show();
-            return;
-        }
+//        // Skip if the image is already saved
+//        if (isImageSaved) {
+//            Toast.makeText(this,"Image is already saved.", Toast.LENGTH_LONG).show();
+//            return;
+//        }
 
         // Create storage directories if they don't already exist
         File sdIconStorageDir = new File(Constants.RDT_IMAGE_DIR);
@@ -309,10 +313,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 
             // Notify the user that the image has been saved
             Toast.makeText(this,"Image is successfully saved!", Toast.LENGTH_SHORT).show();
-            isImageSaved = true;
-
-            // clear sampleID text box - wwang
-            inputSampleID.setText("");
+//            isImageSaved = true;
 
         } catch (Exception e) {
             Log.w("TAG", "Error saving image file: " + Log.getStackTraceString(e));
@@ -346,7 +347,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
                             new DialogInterface.OnClickListener() {
                                 @Override
                                 public void onClick(DialogInterface arg0, int arg1) {
-                                    Toast.makeText(ImageResultActivity.this,"Image saved successfully",Toast.LENGTH_LONG).show();
+//                                    Toast.makeText(ImageResultActivity.this,"Image saved successfully",Toast.LENGTH_LONG).show();
                                     saveImageFile(SampleID);
                                 }
                             });
