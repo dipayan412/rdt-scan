@@ -191,6 +191,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         saveImageButton.setOnClickListener(this);
         Button sendImageButton = findViewById(R.id.doneButton);
         sendImageButton.setOnClickListener(this);
+        inputSampleID= findViewById(R.id.sampleID_input);
     }
 
     /**
@@ -237,7 +238,9 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (view.getId() == R.id.saveButton) {
 
             // Test whether the inputSampleID field is empty. - wwang
-            inputSampleID= findViewById(R.id.sampleID_input);
+
+            // moving this line to initViews()
+//            inputSampleID= findViewById(R.id.sampleID_input);
             String sampleID=inputSampleID.getText().toString().trim();
             searchSampleID(sampleID);
 
