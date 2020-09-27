@@ -14,8 +14,10 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Sensor;
@@ -57,16 +59,24 @@ import android.widget.Toast;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 
+import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
+import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
+import edu.washington.cs.ubicomplab.rdt_reader.core.Constants;
 import edu.washington.cs.ubicomplab.rdt_reader.core.ImageProcessor;
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.ImageQualityViewListener;
 import edu.washington.cs.ubicomplab.rdt_reader.core.RDTCaptureResult;
@@ -129,9 +139,11 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
     private HandlerThread mOnImageAvailableThread;
     private Handler mOnImageAvailableHandler;
     private ImageReader mImageReader;
+    private ImageReader singleImageReader;
     final Object focusStateLock = new Object();
     final BlockingQueue<Image> imageQueue = new ArrayBlockingQueue<>(1);
     private CaptureRequest.Builder mPreviewRequestBuilder;
+    private CaptureRequest.Builder mCaptureRequestBuilder;
 
     private SensorManager sensorManager;
     private Sensor sensor;
@@ -287,7 +299,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 return;
 
             // Check that an image is available
-            final Image image = reader.acquireLatestImage();
+            final Image image = reader.acquireNextImage();
             Log.d(TAG,"Image Height " +image.getHeight()+" Image Width "+ image.getWidth());
 
             if (image == null)
@@ -311,6 +323,42 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
     };
 
+    private final ImageReader.OnImageAvailableListener singleOnImageAvailbleListener =new ImageReader.OnImageAvailableListener(){
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+            Log.d(TAG,"captured single image");
+            Image image = reader.acquireNextImage();
+            Mat hiresMat = ImageUtil.imageToRGBMat(image);
+            hiresMat = ImageUtil.cropInputMat(hiresMat,.75);
+
+            Bitmap hiResBitMap=Bitmap.createBitmap(hiresMat.width(),
+                    hiresMat.height(),
+                    Bitmap.Config.ARGB_8888);
+
+            Utils.matToBitmap(hiresMat,hiResBitMap);
+
+
+            try{
+                File sdIconStorageDir = new File(Constants.RDT_IMAGE_DIR);
+                sdIconStorageDir.mkdirs();
+                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss-SSS");
+
+                String filePath = sdIconStorageDir.toString() +
+                String.format("/%s_hires.jpg", sdf.format(new Date()));
+                FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+                hiResBitMap.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream);
+                fileOutputStream.flush();
+                fileOutputStream.close();
+                Log.d(TAG,"hiRes breakpoint");
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+        }
+    };
     /**
      * Callback for handling events related to JPEG capture
      */
@@ -375,10 +423,10 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
     /**
      * The main {@link AsyncTask} that calls on the RDT quality checking and interpretation methods
      */
-    private class ImageProcessAsyncTask extends AsyncTask<Image, Void, Void> {
+    private class ImageProcessAsyncTask extends AsyncTask<Image, Void, RDTDetectedResult> {
 
         @Override
-        protected Void doInBackground(Image... images) {
+        protected RDTDetectedResult  doInBackground(Image... images) {
             // Assess the quality of this image
             Image image = images[0];
             final Mat rgbaMat = ImageUtil.imageToRGBMat(image);
@@ -420,10 +468,22 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 interpretationResult.resultMat.release();
 
             // Interrupt the thread if a result was found
-            if (result == RDTDetectedResult.STOP)
+            if (result == RDTDetectedResult.STOP) {
                 mOnImageAvailableThread.interrupt();
+            }
+            return result;
+        }
 
-            return null;
+        @Override
+        protected void onPostExecute(RDTDetectedResult result) {
+            //super.onPostExecute(result);
+            if(result==RDTDetectedResult.STOP){
+                try {
+                    mCaptureSession.capture(mCaptureRequestBuilder.build(),null,null);
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -718,6 +778,9 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mOnImageAvailableHandler);
 
+                singleImageReader =ImageReader.newInstance(3264,1836,ImageFormat.YUV_420_888,2);
+                singleImageReader.setOnImageAvailableListener(singleOnImageAvailbleListener,mOnImageAvailableHandler);
+
                 // Update the aspect ratio of the TextureView to the size of the preview
                 int orientation = getResources().getConfiguration().orientation;
                 if (orientation == Configuration.ORIENTATION_LANDSCAPE)
@@ -887,6 +950,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             // Prepare the Surface
             Surface surface = new Surface(texture);
             Surface mImageSurface = mImageReader.getSurface();
+            Surface singleImageSurface= singleImageReader.getSurface();
 
             // Add objects to builder
             mPreviewRequestBuilder
@@ -894,8 +958,17 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             mPreviewRequestBuilder.addTarget(surface);
             mPreviewRequestBuilder.addTarget(mImageSurface);
 
+            mCaptureRequestBuilder=mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            mCaptureRequestBuilder.addTarget(singleImageSurface);
+            mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,CaptureRequest.CONTROL_AE_MODE_ON);
+            mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE,CaptureRequest.CONTROL_AWB_MODE_DAYLIGHT);
+            mCaptureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+            mCaptureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE,CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON);
+
+
             // Create CaptureSession for preview
-            mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
+            mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface(),singleImageSurface),
                     mCameraCaptureSessionStateCallback, null
             );
         } catch (CameraAccessException e) {
@@ -997,7 +1070,8 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
      * and the {@link ImageProcessor} is doing its final check
      * @param currentState: the current {@link QualityCheckingState}
      */
-    private void setProgressUI(QualityCheckingState currentState) {
+    private void
+    setProgressUI(QualityCheckingState currentState) {
         // Skip if feedback is not needed
         if (!showFeedback)
             return;

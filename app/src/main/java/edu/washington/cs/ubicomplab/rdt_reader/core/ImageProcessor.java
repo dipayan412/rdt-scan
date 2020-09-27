@@ -197,6 +197,7 @@ public class ImageProcessor {
 
         // If the frame passes those two checks, continue to try to detect the RDT
         if (passed) {
+
             // Locate the RDT design within the camera frame
             MatOfPoint2f boundary = detectRDT(grayMat);
             grayMat.release();
