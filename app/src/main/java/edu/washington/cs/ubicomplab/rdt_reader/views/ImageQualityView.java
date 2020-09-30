@@ -62,6 +62,7 @@ import org.opencv.android.LoaderCallbackInterface;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -331,7 +332,17 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             Log.d(TAG,"captured single image");
             Image image = reader.acquireNextImage();
             Mat hiresMat = ImageUtil.imageToRGBMat(image);
-            hiresMat = ImageUtil.cropInputMat(hiresMat,.75);
+
+            Double cropwidth=1.0;
+            Double cropheight=.6;
+            int neworiginX= (int) (hiresMat.width()*(1-cropwidth)/2);
+            int neworiginY= (int) (hiresMat.height()*(1-cropheight)/2);
+            int newWidth=(int) (hiresMat.width()-neworiginX);
+            int newHeight=(int)hiresMat.height()-neworiginY;
+
+            Rect cropRect=new Rect(neworiginX,neworiginY,newWidth,newHeight);
+            hiresMat = hiresMat.submat(cropRect);
+            //save to RDTCaptureResult so that it can be saved in ImageResultActivity
             RDTCaptureResult.setresultMat(hiresMat);
 
           /*  try{
@@ -698,6 +709,11 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 mImageReader.close();
                 mImageReader = null;
             }
+            if(null!=singleImageReader){
+                singleImageReader.close();
+                singleImageReader=null;
+            }
+
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
         } finally {
@@ -735,9 +751,14 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 Size closestImageSize = new Size(Integer.MAX_VALUE,
                         (int) (Integer.MAX_VALUE * (aspectRatio[1] / aspectRatio[0])));
 
+                Size maxSize= new Size(0,0);
+
                 // Find the closest sizes to the that is most similar to the desired aspect ratio
                 for (Size size : Arrays.asList(map.getOutputSizes(ImageFormat.YUV_420_888))) {
                     Log.d(TAG, "Available Sizes: " + size.toString());
+                    if(size.getWidth()*size.getHeight()>maxSize.getWidth()*maxSize.getHeight()){
+                        maxSize=size;
+                    }
                     if (size.getWidth()*aspectRatio[1] == size.getHeight()*aspectRatio[0]) {
                         // Check if current preview size is closer to the ideal
                         double currPreviewDiff = (CAMERA2_PREVIEW_SIZE.height*CAMERA2_PREVIEW_SIZE.width) -
@@ -772,7 +793,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mOnImageAvailableHandler);
 
-                singleImageReader =ImageReader.newInstance(3264,1836,ImageFormat.YUV_420_888,2);
+                singleImageReader =ImageReader.newInstance(maxSize.getWidth(),maxSize.getHeight(),ImageFormat.YUV_420_888,2);
                 singleImageReader.setOnImageAvailableListener(singleOnImageAvailableListener,mOnImageAvailableHandler);
 
                 // Update the aspect ratio of the TextureView to the size of the preview
@@ -956,10 +977,8 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             mCaptureRequestBuilder.addTarget(singleImageSurface);
             mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,CaptureRequest.CONTROL_AE_MODE_ON);
-            mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE,CaptureRequest.CONTROL_AWB_MODE_DAYLIGHT);
+            mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE,CaptureRequest.CONTROL_AWB_MODE_AUTO);
             mCaptureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
-            mCaptureRequestBuilder.set(CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE,CaptureRequest.LENS_OPTICAL_STABILIZATION_MODE_ON);
-
 
             // Create CaptureSession for preview
             mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface(),singleImageSurface),
