@@ -72,7 +72,7 @@ public class RDTInterpretationResult {
                                    String topLineName, String middleLineName, String bottomLineName,
                                    boolean hasTooMuchBlood, int numberOfLines,
                                    ArrayList<double[]> peaks, ArrayList<double[]> redpeaks, double[] avgIntensities) {
-        this.resultMat = resultMat;
+        this.resultMat = resultWindowMat;
         this.topLine = topLine;
         this.middleLine = middleLine;
         this.bottomLine = bottomLine;

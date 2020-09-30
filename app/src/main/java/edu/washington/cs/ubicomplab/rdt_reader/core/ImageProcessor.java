@@ -1002,7 +1002,7 @@ public class ImageProcessor {
             if (resultWindowMat.width() == 0 && resultWindowMat.height() == 0)
                 return new RDTInterpretationResult(resultWindowMat,
                         false, false, false,
-                        mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, false, mRDT.numberOfLines, peaks, null);
+                        mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, false, mRDT.numberOfLines, peaks, Redpeaks, null);
 
             // Convert the result window to grayscale
             Mat grayMat = new Mat();
