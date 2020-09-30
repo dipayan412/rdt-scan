@@ -60,6 +60,7 @@ import static org.opencv.core.CvType.CV_8U;
 import static org.opencv.core.CvType.CV_8UC3;
 import static org.opencv.imgproc.Imgproc.COLOR_BGR2HLS;
 import static org.opencv.imgproc.Imgproc.COLOR_RGB2GRAY;
+import static org.opencv.imgproc.Imgproc.COLOR_RGB2HLS;
 import static org.opencv.imgproc.Imgproc.COLOR_RGBA2RGB;
 import static org.opencv.imgproc.Imgproc.Laplacian;
 import static org.opencv.imgproc.Imgproc.THRESH_BINARY_INV;
@@ -1025,7 +1026,10 @@ public class ImageProcessor {
             // Detect the lines in the result window
             // Convert the image to HLS
             Mat hls = new Mat();
-            cvtColor(resultWindowMat, hls, COLOR_BGR2HLS);
+            Mat tempMat=new Mat();
+            cvtColor(resultWindowMat,hls,COLOR_BGR2HLS);
+            //cvtColor(resultWindowMat,tempMat,COLOR_RGBA2RGB);
+            //cvtColor(tempMat, hls,COLOR_RGB2HLS);
 
             // Split the channels
             List<Mat> channels = new ArrayList<>();

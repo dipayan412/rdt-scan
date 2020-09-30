@@ -9,6 +9,7 @@
 package edu.washington.cs.ubicomplab.rdt_reader.views;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
@@ -323,22 +324,17 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
     };
 
-    private final ImageReader.OnImageAvailableListener singleOnImageAvailbleListener =new ImageReader.OnImageAvailableListener(){
+    private final ImageReader.OnImageAvailableListener singleOnImageAvailableListener =new ImageReader.OnImageAvailableListener(){
+
         @Override
         public void onImageAvailable(ImageReader reader) {
             Log.d(TAG,"captured single image");
             Image image = reader.acquireNextImage();
             Mat hiresMat = ImageUtil.imageToRGBMat(image);
             hiresMat = ImageUtil.cropInputMat(hiresMat,.75);
+            RDTCaptureResult.setresultMat(hiresMat);
 
-            Bitmap hiResBitMap=Bitmap.createBitmap(hiresMat.width(),
-                    hiresMat.height(),
-                    Bitmap.Config.ARGB_8888);
-
-            Utils.matToBitmap(hiresMat,hiResBitMap);
-
-
-            try{
+          /*  try{
                 File sdIconStorageDir = new File(Constants.RDT_IMAGE_DIR);
                 sdIconStorageDir.mkdirs();
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss-SSS");
@@ -355,7 +351,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
-            }
+            }*/
 
         }
     };
@@ -469,21 +465,19 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
             // Interrupt the thread if a result was found
             if (result == RDTDetectedResult.STOP) {
-                mOnImageAvailableThread.interrupt();
+                try {
+                    mCaptureSession.capture(mCaptureRequestBuilder.build(),null,null);
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+                //mOnImageAvailableThread.interrupt();
             }
             return result;
         }
 
         @Override
         protected void onPostExecute(RDTDetectedResult result) {
-            //super.onPostExecute(result);
-            if(result==RDTDetectedResult.STOP){
-                try {
-                    mCaptureSession.capture(mCaptureRequestBuilder.build(),null,null);
-                } catch (CameraAccessException e) {
-                    e.printStackTrace();
-                }
-            }
+            super.onPostExecute(result);
         }
     }
 
@@ -779,7 +773,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                         mOnImageAvailableListener, mOnImageAvailableHandler);
 
                 singleImageReader =ImageReader.newInstance(3264,1836,ImageFormat.YUV_420_888,2);
-                singleImageReader.setOnImageAvailableListener(singleOnImageAvailbleListener,mOnImageAvailableHandler);
+                singleImageReader.setOnImageAvailableListener(singleOnImageAvailableListener,mOnImageAvailableHandler);
 
                 // Update the aspect ratio of the TextureView to the size of the preview
                 int orientation = getResources().getConfiguration().orientation;
@@ -1009,7 +1003,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             mInstructionText.setText(getResources().getString(R.string.instruction_pos));
             String checkSymbol = "&#x2713; ";
             String isFlatStr = isFlat ? checkSymbol + "Flat: passed" : "Flat: failed";
-            String message = String.format(getResources().getString(R.string.quality_msg_format),
+            @SuppressLint("StringFormatMatches") String message = String.format(getResources().getString(R.string.quality_msg_format),
                     "failed", "failed", "failed", "failed", isFlatStr);
             mImageQualityFeedbackView.setText(Html.fromHtml(message));
         } else if (currFocusState == FocusState.INACTIVE) {

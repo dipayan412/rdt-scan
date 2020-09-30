@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 
+import org.opencv.core.Mat;
+
 import java.io.Serializable;
 
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.ImageQualityViewListener;
@@ -25,7 +27,7 @@ import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.DEFAULT_RDT
 public class ImageQualityActivity extends Activity implements ImageQualityViewListener {
     ImageQualityView mImageQualityView;
 
-    /**
+       /**
      * {@link android.app.Activity} onCreate()
      * @param savedInstanceState: the bundle object in case this is launched from an intent
      */
@@ -47,6 +49,7 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
             mImageQualityView.setRDTName(DEFAULT_RDT_NAME);
         }
     }
+
 
     /**
      * {@link android.app.Activity} onResume()
@@ -102,10 +105,12 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
         if (!rdtCaptureResult.allChecksPassed || rdtInterpretationResult == null)
             return ImageQualityView.RDTDetectedResult.CONTINUE;
 
+
         // Pass the image quality and interpretation data to the new activity
         final ImageQualityActivity self = this;
         final byte[] captureByteArray = ImageUtil.matToByteArray(rdtCaptureResult.resultMat);
         final byte[] windowByteArray = ImageUtil.matToByteArray(rdtInterpretationResult.resultMat);
+
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -124,8 +129,8 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
                 i.putExtra("numberOfLines", rdtInterpretationResult.numberOfLines);
 
                 Bundle args = new Bundle();
-                args.putSerializable("ARRAYLIST",(Serializable)rdtInterpretationResult.peaks);
-                args.putSerializable("avgIntensities",(Serializable)rdtInterpretationResult.avgIntensities);
+                args.putSerializable("ARRAYLIST", rdtInterpretationResult.peaks);
+                args.putSerializable("avgIntensities", rdtInterpretationResult.avgIntensities);
                 i.putExtra("BUNDLE",args);
 
                 startActivity(i);

@@ -9,7 +9,7 @@
 package edu.washington.cs.ubicomplab.rdt_reader.activities;
 
 import android.app.AlertDialog;
-import android.arch.persistence.room.Room;
+//import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -34,6 +34,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -45,6 +48,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
+import edu.washington.cs.ubicomplab.rdt_reader.core.RDTCaptureResult;
 import edu.washington.cs.ubicomplab.rdt_reader.db.DatabaseClient;
 import edu.washington.cs.ubicomplab.rdt_reader.fragments.SettingsDialogFragment;
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.SettingsDialogListener;
@@ -67,6 +71,11 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
     Bitmap resultimageBitMap;
     Bitmap windowimageBitMap;
     String resultString;
+    Bitmap hiresBitMap;
+
+
+
+
 
     // Capture time variable
     long timeTaken = 0;
@@ -85,6 +94,14 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 
         // Initialize UI elements
         initViews();
+
+        Mat hiresMat= RDTCaptureResult.hiresMat;
+        hiresBitMap=Bitmap.createBitmap(hiresMat.width(),
+                hiresMat.height(),
+                Bitmap.Config.ARGB_8888);
+
+        Utils.matToBitmap(hiresMat,hiresBitMap);
+
     }
 
     //  size = 3
@@ -292,13 +309,24 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 
             ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
             windowimageBitMap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
-
-
             fileOutputStream = new FileOutputStream(filePath);
             fileOutputStream.write(windowimagestream.toByteArray());
             //fileOutputStream.write(windowByteArray);
             fileOutputStream.flush();
             fileOutputStream.close();
+
+            //Save highres image
+            filePath = sdIconStorageDir.toString() +
+                    String.format("/%s-%s_hires.jpg", sampleID,sdf.format(new Date()));
+            ByteArrayOutputStream hiresimagestream=new ByteArrayOutputStream();
+            hiresBitMap.compress(Bitmap.CompressFormat.JPEG,100,hiresimagestream);
+            fileOutputStream = new FileOutputStream(filePath);
+            fileOutputStream.write(hiresimagestream.toByteArray());
+            //fileOutputStream.write(windowByteArray);
+            fileOutputStream.flush();
+            fileOutputStream.close();
+
+
 
             ExifInterface windowExif=new ExifInterface(filePath);
 
