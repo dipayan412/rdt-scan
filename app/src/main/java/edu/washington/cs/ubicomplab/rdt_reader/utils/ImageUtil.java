@@ -139,6 +139,25 @@ public final class ImageUtil {
         return bs.toByteArray();
     }
 
+    public static byte[] matToByteArray(Mat inputMat, boolean rotate) {
+        // Convert from Mat to Bitmap
+        Bitmap resultBitmap = Bitmap.createBitmap(inputMat.cols(), inputMat.rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(inputMat, resultBitmap);
+
+        // Rotate by 90°
+        if(rotate) {
+            Matrix matrix = new Matrix();
+            matrix.postRotate(90);
+            resultBitmap = Bitmap.createBitmap(resultBitmap, 0, 0, resultBitmap.getWidth(), resultBitmap.getHeight(), matrix, true);
+        }
+
+
+        // Compress into byte array using JPEG
+        ByteArrayOutputStream bs = new ByteArrayOutputStream();
+        resultBitmap.compress(Bitmap.CompressFormat.JPEG, 100, bs);
+        return bs.toByteArray();
+    }
+
     /**
      * Extract the brightness from an RGB color
      * @param rgb: the RGB color
