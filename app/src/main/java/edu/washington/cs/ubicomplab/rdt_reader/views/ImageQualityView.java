@@ -345,25 +345,6 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             //save to RDTCaptureResult so that it can be saved in ImageResultActivity
             RDTCaptureResult.setresultMat(hiresMat);
 
-          /*  try{
-                File sdIconStorageDir = new File(Constants.RDT_IMAGE_DIR);
-                sdIconStorageDir.mkdirs();
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss-SSS");
-
-                String filePath = sdIconStorageDir.toString() +
-                String.format("/%s_hires.jpg", sdf.format(new Date()));
-                FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-                hiResBitMap.compress(Bitmap.CompressFormat.JPEG,100,fileOutputStream);
-                fileOutputStream.flush();
-                fileOutputStream.close();
-                Log.d(TAG,"hiRes breakpoint");
-
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }*/
-
         }
     };
     /**
@@ -756,10 +737,13 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 // Find the closest sizes to the that is most similar to the desired aspect ratio
                 for (Size size : Arrays.asList(map.getOutputSizes(ImageFormat.YUV_420_888))) {
                     Log.d(TAG, "Available Sizes: " + size.toString());
-                    if(size.getWidth()*size.getHeight()>maxSize.getWidth()*maxSize.getHeight()){
-                        maxSize=size;
-                    }
+
                     if (size.getWidth()*aspectRatio[1] == size.getHeight()*aspectRatio[0]) {
+                        //get maximum size with desired aspect ratio
+                        //cassette length (width in image) is dominate dim, so 16:9 will reduce size
+                        if(size.getWidth()*size.getHeight()>maxSize.getWidth()*maxSize.getHeight()){
+                            maxSize=size;
+                        }
                         // Check if current preview size is closer to the ideal
                         double currPreviewDiff = (CAMERA2_PREVIEW_SIZE.height*CAMERA2_PREVIEW_SIZE.width) -
                                 closestPreviewSize.getHeight()*closestPreviewSize.getWidth();
@@ -975,10 +959,12 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
             mCaptureRequestBuilder=mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             mCaptureRequestBuilder.addTarget(singleImageSurface);
+            mCaptureRequestBuilder.addTarget(surface);
             mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
             mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,CaptureRequest.CONTROL_AE_MODE_ON);
             mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE,CaptureRequest.CONTROL_AWB_MODE_AUTO);
             mCaptureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+            mCaptureRequestBuilder.set(CaptureRequest.EDGE_MODE,CaptureRequest.EDGE_MODE_HIGH_QUALITY);
 
             // Create CaptureSession for preview
             mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface(),singleImageSurface),

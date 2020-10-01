@@ -16,7 +16,7 @@ android {
         targetSdkVersion 26
         versionCode 1
         versionName "1.0"
-        setProperty("archivesBaseName", "GHL-rdtscan-$versionName")
+        setProperty("archivesBaseName", "GHL-rdtscan_hires-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
