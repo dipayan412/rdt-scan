@@ -103,6 +103,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         resultString = "" + (peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f", peaks.get(0)[3]) : "-1");
         resultString += ":" + (peaks.size() > 1 ? String.format("%.1f", peaks.get(1)[3]) : "-1");
         // Captured image
+
         if (intent.hasExtra("captured")) {
             capturedByteArray = intent.getExtras().getByteArray("captured");
             mBitmapToSave = BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
@@ -124,11 +125,14 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             originalWindowBitmap = Bitmap.createBitmap(originalWindowBitmap, 0, 0, originalWindowBitmap.getWidth(), originalWindowBitmap.getHeight(), matrix_0, true);
 
             if(peaks.size() > 0) {
-                Mat windowMat = Imgcodecs.imdecode(new MatOfByte(windowByteArray), Imgcodecs.CV_LOAD_IMAGE_UNCHANGED);
+
+                Mat windowMat = Imgcodecs.imdecode(new MatOfByte(windowByteArray), Imgcodecs.CV_LOAD_IMAGE_ANYCOLOR);
+                Imgproc.cvtColor(windowMat,windowMat,Imgproc.COLOR_BGR2RGB);
                 if(peaks.get(0) != null) {
                     Point pt1_control = new Point(peaks.get(0)[0], 0);
                     Point pt2_control = new Point(peaks.get(0)[0], 4);
-                    Imgproc.line(windowMat, pt1_control, pt2_control, new Scalar(255, 166, 0), 1);
+//                    Imgproc.line(windowMat, pt1_control, pt2_control, new Scalar(255, 166, 0), 1);
+                    Imgproc.line(windowMat, pt1_control, pt2_control, new Scalar(0, 0, 255), 1);
                 }
                 if(peaks.size() > 1) {
                     Point pt1_test=new Point(peaks.get(1)[0],0);
@@ -145,6 +149,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             matrix.postRotate(90);
             windowimageBitMap = Bitmap.createBitmap(windowimageBitMap, 0, 0, windowimageBitMap.getWidth(), windowimageBitMap.getHeight(), matrix, true);
             windowImageView.setImageBitmap(windowimageBitMap);
+
         }
 
 //        // Capture time
@@ -164,14 +169,14 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("topLine")) {
             boolean topLine = intent.getBooleanExtra("topLine", false);
             TextView topLineTextView = findViewById(R.id.topLineTextView);
-            topLineTextView.setTextColor(Color.rgb(255, 166, 0));
+            topLineTextView.setTextColor(Color.rgb(0, 0, 255));
             topLineTextView.setText(peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f",(peaks.get(0)[3])) : "no control line");
             //topLineTextView.setText(String.format("%s", topLine ? "True" : "False"));
         }
         if (intent.hasExtra("topLineName")) {
             String topLineName = intent.getStringExtra("topLineName");
             TextView topLineNameTextView = findViewById(R.id.topLineNameTextView);
-            topLineNameTextView.setTextColor(Color.rgb(255, 166, 0));
+            topLineNameTextView.setTextColor(Color.rgb(0, 0, 255));
             topLineNameTextView.setText(topLineName);
         }
 
