@@ -96,11 +96,19 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         Intent intent = getIntent();
 
         Bundle args = intent.getBundleExtra("BUNDLE");
-        ArrayList<double[]> peaks = (ArrayList<double[]>) args.getSerializable("ARRAYLIST");
+        // peaksarray extracted
+        ArrayList<double[]> peaks = (ArrayList<double[]>) args.getSerializable("peaksArray");
+        // extract red channel peaks
+        ArrayList<double[]> redPeaks = (ArrayList<double[]>) args.getSerializable("RedpeaksArray");
         double[] avgIntensities = (double[]) args.getSerializable("avgIntensities");
 
         resultString = "" + (peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f", peaks.get(0)[3]) : "-1");
-        resultString += ":" + (peaks.size() > 1 ? String.format("%.1f", peaks.get(1)[3]) : "-1");
+        resultString += ":" + (peaks.size() > 1 ? String.format("%.1f", peaks.get(1)[3]) : "-1")+System.lineSeparator();
+
+        //add red peak results to the resultString
+        resultString += "" + (redPeaks.size() > 0 && redPeaks.get(0) != null ? String.format("%.1f", redPeaks.get(0)[3]) : "-1");
+        resultString += ":" + (redPeaks.size() > 1 ? String.format("%.1f", redPeaks.get(1)[3]) : "-1");
+
         // Captured image
         if (intent.hasExtra("captured")) {
             capturedByteArray = intent.getExtras().getByteArray("captured");
