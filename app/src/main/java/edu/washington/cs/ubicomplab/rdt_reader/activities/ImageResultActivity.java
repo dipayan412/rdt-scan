@@ -95,13 +95,18 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         // Initialize UI elements
         initViews();
 
+
         Mat hiresMat= RDTCaptureResult.hiresMat;
-        hiresBitMap=Bitmap.createBitmap(hiresMat.width(),
-                hiresMat.height(),
-                Bitmap.Config.ARGB_8888);
 
-        Utils.matToBitmap(hiresMat,hiresBitMap);
+        if(null==hiresMat){
+            Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.mipmap.defaultbitmap);
+        } else {
+            hiresBitMap = Bitmap.createBitmap(hiresMat.width(),
+                    hiresMat.height(),
+                    Bitmap.Config.ARGB_8888);
 
+            Utils.matToBitmap(hiresMat, hiresBitMap);
+        }
     }
 
     //  size = 3
