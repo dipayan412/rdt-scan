@@ -28,6 +28,7 @@ public class RDTInterpretationResult {
     public boolean hasTooMuchBlood;
     public int numberOfLines;
     public ArrayList<double[]> peaks;
+    public ArrayList<double[]> redPeaks;
     public double[] avgIntensities;
 
     public RDTInterpretationResult() {
@@ -42,6 +43,7 @@ public class RDTInterpretationResult {
         hasTooMuchBlood = false;
         numberOfLines = 2;
         peaks = new ArrayList<>();
+        redPeaks = new ArrayList<>();
     }
 
     public RDTInterpretationResult(Mat resultMat, boolean topLine, boolean middleLine, boolean bottomLine,
@@ -57,6 +59,30 @@ public class RDTInterpretationResult {
         this.hasTooMuchBlood = hasTooMuchBlood;
         this.numberOfLines = numberOfLines;
         this.peaks = peaks;
+        this.avgIntensities = avgIntensities;
+        // Convert the image to a Bitmap so it can be displayed with Android
+        if (resultMat.cols() > 0 && resultMat.rows() > 0) {
+            this.resultBitmap = Bitmap.createBitmap(resultMat.cols(), resultMat.rows(),
+                    Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(resultMat, resultBitmap);
+        }
+    }
+
+    public RDTInterpretationResult(Mat resultWindowMat, boolean topLine, boolean middleLine, boolean bottomLine,
+                                   String topLineName, String middleLineName, String bottomLineName,
+                                   boolean hasTooMuchBlood, int numberOfLines,
+                                   ArrayList<double[]> peaks, ArrayList<double[]> redpeaks, double[] avgIntensities) {
+        this.resultMat = resultWindowMat;
+        this.topLine = topLine;
+        this.middleLine = middleLine;
+        this.bottomLine = bottomLine;
+        this.topLineName = topLineName;
+        this.middleLineName = middleLineName;
+        this.bottomLineName = bottomLineName;
+        this.hasTooMuchBlood = hasTooMuchBlood;
+        this.numberOfLines = numberOfLines;
+        this.peaks = peaks;
+        this.redPeaks=redpeaks;
         this.avgIntensities = avgIntensities;
         // Convert the image to a Bitmap so it can be displayed with Android
         if (resultMat.cols() > 0 && resultMat.rows() > 0) {

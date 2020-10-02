@@ -51,6 +51,7 @@ import static java.lang.StrictMath.abs;
 import static org.opencv.core.Core.KMEANS_PP_CENTERS;
 import static org.opencv.core.Core.addWeighted;
 import static org.opencv.core.Core.countNonZero;
+import static org.opencv.core.Core.extractChannel;
 import static org.opencv.core.Core.inRange;
 import static org.opencv.core.Core.kmeans;
 import static org.opencv.core.Core.meanStdDev;
@@ -972,6 +973,9 @@ public class ImageProcessor {
         boolean bottomLine = false;
         double[] avgIntensities;
         ArrayList<double[]> peaks = new ArrayList<>();
+        // Red channel peaks
+        ArrayList<double[]> Redpeaks = new ArrayList<>();
+
         boolean tuned = false;
 
         int offset = 0;
@@ -999,7 +1003,7 @@ public class ImageProcessor {
             if (resultWindowMat.width() == 0 && resultWindowMat.height() == 0)
                 return new RDTInterpretationResult(resultWindowMat,
                         false, false, false,
-                        mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, false, mRDT.numberOfLines, peaks, null);
+                        mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, false, mRDT.numberOfLines, peaks, Redpeaks, null);
 
             // Convert the result window to grayscale
             Mat grayMat = new Mat();
@@ -1024,12 +1028,18 @@ public class ImageProcessor {
                 resultWindowMat = enhanceResultWindow(resultWindowMat);
 
             // Detect the lines in the result window
-            // Convert the image to HLS
+            // Convert the image to HLS Experimented with using the original BGR2HLS vs the following two step conversion.
+            // The results do not seem to be very different in terms of peak height.
+            Mat rgb = new Mat();
             Mat hls = new Mat();
-            Mat tempMat=new Mat();
-            cvtColor(resultWindowMat,hls,COLOR_BGR2HLS);
-            //cvtColor(resultWindowMat,tempMat,COLOR_RGBA2RGB);
-            //cvtColor(tempMat, hls,COLOR_RGB2HLS);
+            cvtColor(resultWindowMat, rgb, COLOR_RGBA2RGB);
+            cvtColor(rgb, hls, COLOR_RGB2HLS);
+
+            //Extract the red channel
+            List<Mat> RGBChannels = new ArrayList<>();
+            Core.split(rgb,RGBChannels);
+            Mat RedChannel=RGBChannels.get(0);
+            double[] avgRedIntensities = new double[RedChannel.cols()];
 
             // Split the channels
             List<Mat> channels = new ArrayList<>();
@@ -1042,17 +1052,25 @@ public class ImageProcessor {
             double[] avgHues = new double[hue.cols()];
             for (int i = 0; i < lightness.cols(); i++) {
                 avgIntensities[i] = 0;
+                //initialize red channel
+                avgRedIntensities[i]=0;
                 avgHues[i] = 0;
                 for (int j = 0; j < lightness.rows(); j++) {
                     avgIntensities[i] += lightness.get(j, i)[0];
+                    // Extract Red Channel
+                    avgRedIntensities[i] += RedChannel.get(j, i)[0];
                     avgHues[i] += hue.get(j, i)[0];
                 }
                 avgIntensities[i] /= lightness.rows();
+                // Calculate column average
+                avgRedIntensities[i]/=RedChannel.rows();
                 avgHues[i] /= hue.rows();
             }
 
             // Detect the peaks
             peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
+            Redpeaks = ImageUtil.detectPeaks(avgRedIntensities, mRDT.lineIntensity, false);
+
             for (double[] p : peaks)
                 Log.d(TAG, String.format("peak: %.2f, %.2f, %.2f, %.2f, %.2f", p[0], p[1], p[2], avgHues[(int)p[0]], p[3]));
 
@@ -1181,6 +1199,6 @@ public class ImageProcessor {
 
         return new RDTInterpretationResult(resultWindowMat,
                 topLine, middleLine, bottomLine,
-                mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, hasTooMuchBlood, mRDT.numberOfLines, peaks, avgIntensities);
+                mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, hasTooMuchBlood, mRDT.numberOfLines, peaks,Redpeaks, avgIntensities);
     }
 }
