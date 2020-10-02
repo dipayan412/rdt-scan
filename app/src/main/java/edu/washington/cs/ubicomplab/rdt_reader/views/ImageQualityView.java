@@ -333,12 +333,12 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             Image image = reader.acquireNextImage();
             Mat hiresMat = ImageUtil.imageToRGBMat(image);
 
-            Double cropwidth=1.0;
+            Double cropwidth=.8;
             Double cropheight=.6;
             int neworiginX= (int) (hiresMat.width()*(1-cropwidth)/2);
             int neworiginY= (int) (hiresMat.height()*(1-cropheight)/2);
-            int newWidth=(int) (hiresMat.width()-neworiginX);
-            int newHeight=(int)hiresMat.height()-neworiginY;
+            int newWidth=(int) (hiresMat.width()-2*neworiginX);
+            int newHeight=(int)hiresMat.height()-2*neworiginY;
 
             Rect cropRect=new Rect(neworiginX,neworiginY,newWidth,newHeight);
             hiresMat = hiresMat.submat(cropRect);
