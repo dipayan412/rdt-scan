@@ -36,11 +36,15 @@ import android.widget.Toast;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+import org.opencv.text.Text;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -66,15 +70,13 @@ import static java.text.DateFormat.getDateTimeInstance;
 public class ImageResultActivity extends AppCompatActivity implements View.OnClickListener, SettingsDialogListener {
     // Image saving variables
     Bitmap mBitmapToSave;
-    byte[] capturedByteArray, windowByteArray;
+    byte[] capturedByteArray, windowByteArray,hiresByteArray;
     boolean isImageSaved = false;
     Bitmap resultimageBitMap;
     Bitmap windowimageBitMap;
+    Bitmap bugBitMap;
     String resultString;
     Bitmap hiresBitMap;
-
-
-
 
 
     // Capture time variable
@@ -92,25 +94,25 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_result);
 
+        // pull in high resolution image from internal file
+        try{
+            FileInputStream hiresFile=this.openFileInput("hires");
+            hiresBitMap=BitmapFactory.decodeStream(hiresFile);
+            hiresFile.close();
+            //delete this to make sure file changes on next capture
+            deleteFile("hires");
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+            hiresBitMap = BitmapFactory.decodeResource(getResources(), R.mipmap.defaultbitmap);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         // Initialize UI elements
         initViews();
-
-
-        Mat hiresMat= RDTCaptureResult.hiresMat;
-
-        if(null==hiresMat){
-            Bitmap largeIcon = BitmapFactory.decodeResource(getResources(), R.mipmap.defaultbitmap);
-        } else {
-            hiresBitMap = Bitmap.createBitmap(hiresMat.width(),
-                    hiresMat.height(),
-                    Bitmap.Config.ARGB_8888);
-
-            Utils.matToBitmap(hiresMat, hiresBitMap);
-        }
     }
 
     //  size = 3
-
     /**
      * Initializes UI elements based on that data that was passed through the intent
      */
@@ -215,6 +217,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
                 warningView.setText("");
             }
         }
+
 
         // Buttons
         Button saveImageButton = findViewById(R.id.saveButton);

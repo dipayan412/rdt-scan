@@ -1,5 +1,9 @@
 package edu.washington.cs.ubicomplab.rdt_reader.interfaces;
 
+import android.media.Image;
+
+import org.opencv.core.Mat;
+
 import edu.washington.cs.ubicomplab.rdt_reader.core.RDTCaptureResult;
 import edu.washington.cs.ubicomplab.rdt_reader.core.RDTInterpretationResult;
 import edu.washington.cs.ubicomplab.rdt_reader.views.ImageQualityView;
@@ -25,4 +29,6 @@ public interface ImageQualityViewListener {
             RDTInterpretationResult rdtInterpretationResult,
             long timeTaken
     );
+
+   void onSingleImage(Mat hiresMat);
 }

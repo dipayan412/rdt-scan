@@ -1,12 +1,20 @@
 package edu.washington.cs.ubicomplab.rdt_reader.activities;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.media.Image;
+import android.media.ImageReader;
 import android.os.Bundle;
 import android.util.Log;
 
+import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.Serializable;
 
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.ImageQualityViewListener;
@@ -26,8 +34,15 @@ import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.DEFAULT_RDT
  */
 public class ImageQualityActivity extends Activity implements ImageQualityViewListener {
     ImageQualityView mImageQualityView;
+    private String TAG="ImageQualityActivity";
+    byte[] captureByteArray=new byte[0];
+    byte[] windowByteArray=new byte[0];
+    RDTInterpretationResult rdtinterpretresult;
+    RDTCaptureResult rdtcaptureresult;
+    long time;
 
-       /**
+
+    /**
      * {@link android.app.Activity} onCreate()
      * @param savedInstanceState: the bundle object in case this is launched from an intent
      */
@@ -108,10 +123,14 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
 
         // Pass the image quality and interpretation data to the new activity
         final ImageQualityActivity self = this;
-        final byte[] captureByteArray = ImageUtil.matToByteArray(rdtCaptureResult.resultMat);
-        final byte[] windowByteArray = ImageUtil.matToByteArray(rdtInterpretationResult.resultMat);
+        rdtcaptureresult=rdtCaptureResult;
+        rdtinterpretresult=rdtInterpretationResult;
+        time=timeTaken;
 
-        runOnUiThread(new Runnable() {
+        captureByteArray = ImageUtil.matToByteArray(rdtCaptureResult.resultMat);
+        windowByteArray = ImageUtil.matToByteArray(rdtInterpretationResult.resultMat);
+
+       /* runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Intent i = new Intent(self, ImageResultActivity.class);
@@ -138,7 +157,58 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
 
                 startActivity(i);
             }
-        });
+        });*/
         return ImageQualityView.RDTDetectedResult.STOP;
+    }
+
+    @Override
+    public void onSingleImage(Mat hiresMat) {
+        Log.d(TAG,"onSingleImage callback");
+
+        final byte[] singleImageArray=ImageUtil.matToByteArray(hiresMat);
+
+        Bitmap hiresBitMap = Bitmap.createBitmap(hiresMat.width(), hiresMat.height(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(hiresMat, hiresBitMap);
+
+        try {
+            ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+            hiresBitMap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
+            FileOutputStream fo=openFileOutput("hires", Context.MODE_PRIVATE);
+            fo.write(bytes.toByteArray());
+            fo.close();
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+
+        final ImageQualityActivity self = this;
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Intent i = new Intent(self, ImageResultActivity.class);
+                i.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
+                i.putExtra("captured", captureByteArray);
+                i.putExtra("window", windowByteArray);
+                i.putExtra("topLine", rdtinterpretresult.topLine);
+                i.putExtra("middleLine", rdtinterpretresult.middleLine);
+                i.putExtra("bottomLine", rdtinterpretresult.bottomLine);
+                i.putExtra("topLineName", rdtinterpretresult.topLineName);
+                i.putExtra("middleLineName", rdtinterpretresult.middleLineName);
+                i.putExtra("bottomLineName", rdtinterpretresult.bottomLineName);
+                i.putExtra("timeTaken", time);
+                i.putExtra("hasTooMuchBlood", rdtinterpretresult.hasTooMuchBlood);
+                i.putExtra("numberOfLines", rdtinterpretresult.numberOfLines);
+
+                Bundle args = new Bundle();
+                //modified signature to peaksArray
+                args.putSerializable("peaksArray", (Serializable) rdtinterpretresult.peaks);
+                //red peak array packed into intent
+                args.putSerializable("RedpeaksArray", (Serializable) rdtinterpretresult.redPeaks);
+                args.putSerializable("avgIntensities", (Serializable) rdtinterpretresult.avgIntensities);
+                i.putExtra("BUNDLE", args);
+
+                startActivity(i);
+            }
+        });
     }
 }

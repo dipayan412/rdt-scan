@@ -61,6 +61,7 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
 import org.opencv.core.Rect;
 
@@ -141,7 +142,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
     private HandlerThread mOnImageAvailableThread;
     private Handler mOnImageAvailableHandler;
     private ImageReader mImageReader;
-    private ImageReader singleImageReader;
+    public ImageReader singleImageReader;
     final Object focusStateLock = new Object();
     final BlockingQueue<Image> imageQueue = new ArrayBlockingQueue<>(1);
     private CaptureRequest.Builder mPreviewRequestBuilder;
@@ -322,16 +323,17 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             imageQueue.add(image);
             new ImageProcessAsyncTask().execute(image);
         }
-
+git 
     };
 
-    private final ImageReader.OnImageAvailableListener singleOnImageAvailableListener =new ImageReader.OnImageAvailableListener(){
+   public final ImageReader.OnImageAvailableListener singleOnImageAvailableListener =new ImageReader.OnImageAvailableListener(){
 
         @Override
         public void onImageAvailable(ImageReader reader) {
             Log.d(TAG,"captured single image");
             Image image = reader.acquireNextImage();
             Mat hiresMat = ImageUtil.imageToRGBMat(image);
+            image.close();
 
             Double cropwidth=.8;
             Double cropheight=.6;
@@ -342,9 +344,8 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
             Rect cropRect=new Rect(neworiginX,neworiginY,newWidth,newHeight);
             hiresMat = hiresMat.submat(cropRect);
-            //save to RDTCaptureResult so that it can be saved in ImageResultActivity
-            RDTCaptureResult.setresultMat(hiresMat);
-
+            Core.rotate(hiresMat,hiresMat,Core.ROTATE_90_CLOCKWISE);
+            mImageQualityViewListener.onSingleImage(hiresMat);
         }
     };
     /**
@@ -456,20 +457,27 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 interpretationResult.resultMat.release();
 
             // Interrupt the thread if a result was found
-            if (result == RDTDetectedResult.STOP) {
+            /*if (result == RDTDetectedResult.STOP) {
                 try {
                     mCaptureSession.capture(mCaptureRequestBuilder.build(),null,null);
                 } catch (CameraAccessException e) {
                     e.printStackTrace();
                 }
                 //mOnImageAvailableThread.interrupt();
-            }
+            }*/
             return result;
         }
 
         @Override
         protected void onPostExecute(RDTDetectedResult result) {
-            super.onPostExecute(result);
+            //super.onPostExecute(result);
+            if(result==RDTDetectedResult.STOP){
+                try{
+                    mCaptureSession.capture(mCaptureRequestBuilder.build(),null,null);
+                }catch (CameraAccessException e){
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -773,11 +781,11 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
                 // Start the image listener
                 mImageReader = ImageReader.newInstance(closestImageSize.getWidth(),
-                        closestImageSize.getHeight(), ImageFormat.YUV_420_888,5);
+                        closestImageSize.getHeight(), ImageFormat.YUV_420_888,3);
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mOnImageAvailableHandler);
 
-                singleImageReader =ImageReader.newInstance(maxSize.getWidth(),maxSize.getHeight(),ImageFormat.YUV_420_888,2);
+                singleImageReader =ImageReader.newInstance(maxSize.getWidth(),maxSize.getHeight(),ImageFormat.YUV_420_888,5);
                 singleImageReader.setOnImageAvailableListener(singleOnImageAvailableListener,mOnImageAvailableHandler);
 
                 // Update the aspect ratio of the TextureView to the size of the preview

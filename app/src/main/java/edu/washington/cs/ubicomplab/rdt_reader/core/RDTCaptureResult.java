@@ -11,7 +11,6 @@ public class RDTCaptureResult {
     // High-level variables
     public boolean allChecksPassed;
     public  Mat resultMat;
-    public static Mat hiresMat=null;
     public MatOfPoint2f boundary;
     public boolean flashEnabled;
 
@@ -52,10 +51,5 @@ public class RDTCaptureResult {
         this.fiducial = fiducial;
         this.isGlared = isGlared;
     }
-    public static Mat getresultMat(){
-        return hiresMat;
-    }
-    public static void setresultMat(Mat mat){
-       hiresMat=mat;
-    }
+
 }
