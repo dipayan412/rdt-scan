@@ -323,7 +323,6 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             imageQueue.add(image);
             new ImageProcessAsyncTask().execute(image);
         }
-git 
     };
 
    public final ImageReader.OnImageAvailableListener singleOnImageAvailableListener =new ImageReader.OnImageAvailableListener(){
