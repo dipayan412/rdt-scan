@@ -103,12 +103,12 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         resultString = "" + (peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f", peaks.get(0)[3]) : "-1");
         resultString += ":" + (peaks.size() > 1 ? String.format("%.1f", peaks.get(1)[3]) : "-1");
         // Captured image
-
+        ImageView resultImageView = findViewById(R.id.RDTImageView);
         if (intent.hasExtra("captured")) {
             capturedByteArray = intent.getExtras().getByteArray("captured");
             mBitmapToSave = BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
 
-            ImageView resultImageView = findViewById(R.id.RDTImageView);
+
             resultimageBitMap=BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
             resultImageView.setImageBitmap(resultimageBitMap);
         }
@@ -120,14 +120,14 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             ImageView windowImageView = findViewById(R.id.WindowImageView);
 
             originalWindowBitmap = BitmapFactory.decodeByteArray(windowByteArray,0,windowByteArray.length);
-            Matrix matrix_0 = new Matrix();
-            matrix_0.postRotate(90);
-            originalWindowBitmap = Bitmap.createBitmap(originalWindowBitmap, 0, 0, originalWindowBitmap.getWidth(), originalWindowBitmap.getHeight(), matrix_0, true);
 
             if(peaks.size() > 0) {
 
-                Mat windowMat = Imgcodecs.imdecode(new MatOfByte(windowByteArray), Imgcodecs.CV_LOAD_IMAGE_ANYCOLOR);
-                Imgproc.cvtColor(windowMat,windowMat,Imgproc.COLOR_BGR2RGB);
+                Mat windowMat = new Mat();
+                Utils.bitmapToMat(originalWindowBitmap, windowMat);//Imgcodecs.imdecode(new MatOfByte(windowByteArray), Imgcodecs.CV_LOAD_IMAGE_ANYCOLOR);
+//                Imgproc.cvtColor(windowMat,windowMat,Imgproc.COLOR_BGR2RGB);
+//                Bitmap temp = Bitmap.createBitmap(windowMat.cols(), windowMat.rows(), Bitmap.Config.ARGB_8888);
+//                Utils.matToBitmap(windowMat, temp);
                 if(peaks.get(0) != null) {
                     Point pt1_control = new Point(peaks.get(0)[0], 0);
                     Point pt2_control = new Point(peaks.get(0)[0], 4);
@@ -150,6 +150,10 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             windowimageBitMap = Bitmap.createBitmap(windowimageBitMap, 0, 0, windowimageBitMap.getWidth(), windowimageBitMap.getHeight(), matrix, true);
             windowImageView.setImageBitmap(windowimageBitMap);
 
+            Matrix matrix_0 = new Matrix();
+            matrix_0.postRotate(90);
+            originalWindowBitmap = Bitmap.createBitmap(originalWindowBitmap, 0, 0, originalWindowBitmap.getWidth(), originalWindowBitmap.getHeight(), matrix_0, true);
+//            windowImageView.setImageBitmap(originalWindowBitmap);
         }
 
 //        // Capture time
