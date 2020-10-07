@@ -8,15 +8,20 @@
 
 package edu.washington.cs.ubicomplab.rdt_reader.activities;
 
+import android.app.AlertDialog;
+import android.arch.persistence.room.Room;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
+import android.database.sqlite.SQLiteConstraintException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.support.design.widget.TextInputEditText;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -50,9 +55,11 @@ import java.util.Date;
 import java.util.Locale;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
+import edu.washington.cs.ubicomplab.rdt_reader.db.DatabaseClient;
 import edu.washington.cs.ubicomplab.rdt_reader.fragments.SettingsDialogFragment;
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.SettingsDialogListener;
 import edu.washington.cs.ubicomplab.rdt_reader.core.Constants;
+import edu.washington.cs.ubicomplab.rdt_reader.model.SampleID;
 
 import static java.text.DateFormat.getDateTimeInstance;
 
@@ -74,6 +81,9 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 
     // Capture time variable
     long timeTaken = 0;
+
+    //SampleID input
+    TextInputEditText inputSampleID;
 
     /**
      * {@link android.app.Activity} onCreate()
@@ -97,11 +107,19 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         Intent intent = getIntent();
 
         Bundle args = intent.getBundleExtra("BUNDLE");
-        ArrayList<double[]> peaks = (ArrayList<double[]>) args.getSerializable("ARRAYLIST");
+        // peaksarray extracted
+        ArrayList<double[]> peaks = (ArrayList<double[]>) args.getSerializable("peaksArray");
+        // extract red channel peaks
+        ArrayList<double[]> redPeaks = (ArrayList<double[]>) args.getSerializable("RedpeaksArray");
         double[] avgIntensities = (double[]) args.getSerializable("avgIntensities");
 
         resultString = "" + (peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f", peaks.get(0)[3]) : "-1");
-        resultString += ":" + (peaks.size() > 1 ? String.format("%.1f", peaks.get(1)[3]) : "-1");
+        resultString += ":" + (peaks.size() > 1 ? String.format("%.1f", peaks.get(1)[3]) : "-1")+System.lineSeparator();
+
+        //add red peak results to the resultString
+        resultString += "" + (redPeaks.size() > 0 && redPeaks.get(0) != null ? String.format("%.1f", redPeaks.get(0)[3]) : "-1");
+        resultString += ":" + (redPeaks.size() > 1 ? String.format("%.1f", redPeaks.get(1)[3]) : "-1");
+
         // Captured image
         ImageView resultImageView = findViewById(R.id.RDTImageView);
         if (intent.hasExtra("captured")) {
@@ -229,6 +247,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         saveImageButton.setOnClickListener(this);
         Button sendImageButton = findViewById(R.id.doneButton);
         sendImageButton.setOnClickListener(this);
+        inputSampleID= findViewById(R.id.sampleID_input);
     }
 
     /**
@@ -237,6 +256,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+        // clear sampleID text box - wwang
+        inputSampleID.setText("");
         Intent intent = new Intent(this, MainActivity.class);
         startActivity(intent);
     }
@@ -273,88 +294,164 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (view.getId() == R.id.saveButton) {
 
             // Test whether the inputSampleID field is empty. - wwang
-            TextInputEditText inputSampleID = findViewById(R.id.sampleID_input);
-            String sampleID=inputSampleID.getText().toString();
 
-            if (sampleID.trim().equals("")) {
-                inputSampleID.setError("Sample ID is required!");
-                inputSampleID.setHint("Sample ID can not be empty. Input a sample ID");
-                return;
-            }
+            // moving this line to initViews()
+//            inputSampleID= findViewById(R.id.sampleID_input);
+            String sampleID=inputSampleID.getText().toString().trim();
+            searchSampleID(sampleID);
 
-            // Skip if the image is already saved
-            if (isImageSaved) {
-                Toast.makeText(this,"Image is already saved.", Toast.LENGTH_LONG).show();
-                return;
-            }
-
-            // Create storage directories if they don't already exist
-            File sdIconStorageDir = new File(Constants.RDT_IMAGE_DIR);
-            sdIconStorageDir.mkdirs();
-
-            // Get the current time to use as part of the filename
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss-SSS");
-
-            // Save both the full image and the enhanced image
-            try {
-                // Save the full image
-                // removed timetaken from filename, added sampleID at beginning of filename wwang
-                String filePath = sdIconStorageDir.toString() +
-                        String.format("/%s-%s_full.jpg",sampleID, sdf.format(new Date()));
-                FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-                fileOutputStream.write(capturedByteArray);
-                fileOutputStream.flush();
-                fileOutputStream.close();
-
-                // Save the enhanced image
-                filePath = sdIconStorageDir.toString() +
-                        String.format("/%s-%s_cropped.jpg", sampleID,sdf.format(new Date()));
-
-                ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
-                originalWindowBitmap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
-
-
-                fileOutputStream = new FileOutputStream(filePath);
-                fileOutputStream.write(windowimagestream.toByteArray());
-                //fileOutputStream.write(windowByteArray);
-                fileOutputStream.flush();
-                fileOutputStream.close();
-
-                ExifInterface windowExif=new ExifInterface(filePath);
-
-
-                // save sample metadata to image file - wwang Note this might not work with SDK <24
-                windowExif.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, sampleID);
-                windowExif.setAttribute(ExifInterface.TAG_USER_COMMENT,resultString);
-                windowExif.saveAttributes();
-
-                Log.d("ImageResultActivity",windowExif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION));
-
-
-                // Send broadcast to OS so that the files appear immediately in the file system
-                sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + filePath)));
-
-                // Notify the user that the image has been saved
-                Toast.makeText(this,"Image is successfully saved!", Toast.LENGTH_SHORT).show();
-                isImageSaved = true;
-
-                // clear sampleID text box - wwang
-                inputSampleID.setText("");
-
-            } catch (Exception e) {
-                Log.w("TAG", "Error saving image file: " + Log.getStackTraceString(e));
-            }
         } else if (view.getId() == R.id.doneButton) {
 //            Intent data = new Intent();
 //            data.putExtra("RDTCaptureByteArray", capturedByteArray);
 //            setResult(RESULT_OK, data);
 //            finish();
+            // clear sampleID text box - wwang
+            inputSampleID.setText("");
 
             Intent intent = new Intent(this, MainActivity.class);
             startActivity(intent);
         }
     }
+    /*
+    * refactored function to save imagefile
+    * @param sampleID the sampleID user typed in
+     */
+    public void saveImageFile(String sampleID) {
 
+//        // Skip if the image is already saved
+//        if (isImageSaved) {
+//            Toast.makeText(this,"Image is already saved.", Toast.LENGTH_LONG).show();
+//            return;
+//        }
+
+        // Create storage directories if they don't already exist
+        File sdIconStorageDir = new File(Constants.RDT_IMAGE_DIR);
+        sdIconStorageDir.mkdirs();
+
+        // Get the current time to use as part of the filename
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss-SSS");
+
+
+                ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
+                originalWindowBitmap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
+
+        // Save both the full image and the enhanced image
+        try {
+            // Save the full image
+            // removed timetaken from filename, added sampleID at beginning of filename wwang
+            String filePath = sdIconStorageDir.toString() +
+                    String.format("/%s-%s_full.jpg",sampleID, sdf.format(new Date()));
+            FileOutputStream fileOutputStream = new FileOutputStream(filePath);
+            fileOutputStream.write(capturedByteArray);
+            fileOutputStream.flush();
+            fileOutputStream.close();
+
+
+            // Save the enhanced image
+            filePath = sdIconStorageDir.toString() +
+                    String.format("/%s-%s_cropped.jpg", sampleID,sdf.format(new Date()));
+
+            ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
+            windowimageBitMap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
+
+
+            fileOutputStream = new FileOutputStream(filePath);
+            fileOutputStream.write(windowimagestream.toByteArray());
+            //fileOutputStream.write(windowByteArray);
+            fileOutputStream.flush();
+            fileOutputStream.close();
+
+            ExifInterface windowExif=new ExifInterface(filePath);
+
+
+            // save sample metadata to image file - wwang Note this might not work with SDK <24
+            windowExif.setAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION, sampleID);
+            windowExif.setAttribute(ExifInterface.TAG_USER_COMMENT,resultString);
+            windowExif.saveAttributes();
+
+            Log.d("ImageResultActivity",windowExif.getAttribute(ExifInterface.TAG_IMAGE_DESCRIPTION));
+
+
+            // Send broadcast to OS so that the files appear immediately in the file system
+            sendBroadcast(new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, Uri.parse("file://" + filePath)));
+
+            // Notify the user that the image has been saved
+            Toast.makeText(this,"Image is successfully saved!", Toast.LENGTH_SHORT).show();
+//            isImageSaved = true;
+
+        } catch (Exception e) {
+            Log.w("TAG", "Error saving image file: " + Log.getStackTraceString(e));
+        }
+    }
+
+    /*
+     * new function to perform unique sample ID check
+     * @param sampleID the sampleID user typed in
+     */
+    public void searchSampleID(final String SampleID) {
+        //Test whether input is empty
+        if (SampleID.trim().equals("")) {
+            inputSampleID.setError("Sample ID is required!");
+            inputSampleID.setHint("Sample ID can not be empty. Input a sample ID");
+            Toast.makeText(this,"A sample ID is required.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        class SearchSampleID extends AsyncTask<String,Void,Boolean> {
+            @Override
+            protected void onPostExecute(Boolean aBoolean) {
+                super.onPostExecute(aBoolean);
+                if (aBoolean) {
+                    saveImageFile(SampleID);
+                }
+                else {
+                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(ImageResultActivity.this);
+                    alertDialogBuilder.setMessage("Sample ID already exists. Proceed with saving additional image?");
+                    alertDialogBuilder.setPositiveButton("yes",
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface arg0, int arg1) {
+//                                    Toast.makeText(ImageResultActivity.this,"Image saved successfully",Toast.LENGTH_LONG).show();
+                                    saveImageFile(SampleID);
+                                }
+                            });
+
+                    alertDialogBuilder.setNegativeButton("No",new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Toast.makeText(ImageResultActivity.this,"Image is not saved!",Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    });
+
+                    AlertDialog alertDialog = alertDialogBuilder.create();
+                    alertDialog.show();
+                }
+            }
+
+            @Override
+            protected Boolean doInBackground(String... str) {
+
+                SampleID sampleID=new SampleID();
+                sampleID.setID(str[0]);
+                try {
+                    DatabaseClient.getInstance(getApplicationContext())
+                            .getAppDatabase()
+                            .getSampleIDDao()
+                            .insert(sampleID);
+                }
+                catch (SQLiteConstraintException e) {
+                    return false;
+                }
+                return true;
+            }
+
+
+        }
+
+        SearchSampleID srid=new SearchSampleID();
+        srid.execute(SampleID);
+    }
     /**
      * {@link SettingsDialogFragment} onClickPositiveButton()
      */

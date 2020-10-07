@@ -124,7 +124,10 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
                 i.putExtra("numberOfLines", rdtInterpretationResult.numberOfLines);
 
                 Bundle args = new Bundle();
-                args.putSerializable("ARRAYLIST",(Serializable)rdtInterpretationResult.peaks);
+                //modified signature to peaksArray
+                args.putSerializable("peaksArray",(Serializable)rdtInterpretationResult.peaks);
+                //red peak array packed into intent
+                args.putSerializable("RedpeaksArray", (Serializable)rdtInterpretationResult.redPeaks);
                 args.putSerializable("avgIntensities",(Serializable)rdtInterpretationResult.avgIntensities);
                 i.putExtra("BUNDLE",args);
 
