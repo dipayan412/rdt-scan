@@ -17,6 +17,8 @@ import android.content.res.Resources;
 import android.database.sqlite.SQLiteConstraintException;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.net.Uri;
 import android.os.AsyncTask;
@@ -33,6 +35,14 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfByte;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -66,6 +76,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
     boolean isImageSaved = false;
     Bitmap resultimageBitMap;
     Bitmap windowimageBitMap;
+    Bitmap originalWindowBitmap;
     String resultString;
 
     // Capture time variable
@@ -110,11 +121,12 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         resultString += ":" + (redPeaks.size() > 1 ? String.format("%.1f", redPeaks.get(1)[3]) : "-1");
 
         // Captured image
+        ImageView resultImageView = findViewById(R.id.RDTImageView);
         if (intent.hasExtra("captured")) {
             capturedByteArray = intent.getExtras().getByteArray("captured");
             mBitmapToSave = BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
 
-            ImageView resultImageView = findViewById(R.id.RDTImageView);
+
             resultimageBitMap=BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
             resultImageView.setImageBitmap(resultimageBitMap);
         }
@@ -123,11 +135,43 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("window")) {
             windowByteArray = intent.getExtras().getByteArray("window");
             mBitmapToSave = BitmapFactory.decodeByteArray(windowByteArray, 0, windowByteArray.length);
-
             ImageView windowImageView = findViewById(R.id.WindowImageView);
-            windowimageBitMap=BitmapFactory.decodeByteArray(windowByteArray,0,windowByteArray.length);
+
+            originalWindowBitmap = BitmapFactory.decodeByteArray(windowByteArray,0,windowByteArray.length);
+
+            if(peaks.size() > 0) {
+
+                Mat windowMat = new Mat();
+                Utils.bitmapToMat(originalWindowBitmap, windowMat);//Imgcodecs.imdecode(new MatOfByte(windowByteArray), Imgcodecs.CV_LOAD_IMAGE_ANYCOLOR);
+//                Imgproc.cvtColor(windowMat,windowMat,Imgproc.COLOR_BGR2RGB);
+//                Bitmap temp = Bitmap.createBitmap(windowMat.cols(), windowMat.rows(), Bitmap.Config.ARGB_8888);
+//                Utils.matToBitmap(windowMat, temp);
+                if(peaks.get(0) != null) {
+                    Point pt1_control = new Point(peaks.get(0)[0], 0);
+                    Point pt2_control = new Point(peaks.get(0)[0], 4);
+//                    Imgproc.line(windowMat, pt1_control, pt2_control, new Scalar(255, 166, 0), 1);
+                    Imgproc.line(windowMat, pt1_control, pt2_control, new Scalar(0, 0, 255), 1);
+                }
+                if(peaks.size() > 1) {
+                    Point pt1_test=new Point(peaks.get(1)[0],0);
+                    Point pt2_test=new Point(peaks.get(1)[0],4);
+                    Imgproc.line(windowMat,pt1_test,pt2_test,new Scalar(72,255,0),1);
+                }
+                Bitmap windowBitmap = Bitmap.createBitmap(windowMat.cols(), windowMat.rows(), Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(windowMat, windowBitmap);
+                windowimageBitMap = windowBitmap;
+            } else {
+                windowimageBitMap=BitmapFactory.decodeByteArray(windowByteArray,0,windowByteArray.length);
+            }
+            Matrix matrix = new Matrix();
+            matrix.postRotate(90);
+            windowimageBitMap = Bitmap.createBitmap(windowimageBitMap, 0, 0, windowimageBitMap.getWidth(), windowimageBitMap.getHeight(), matrix, true);
             windowImageView.setImageBitmap(windowimageBitMap);
 
+            Matrix matrix_0 = new Matrix();
+            matrix_0.postRotate(90);
+            originalWindowBitmap = Bitmap.createBitmap(originalWindowBitmap, 0, 0, originalWindowBitmap.getWidth(), originalWindowBitmap.getHeight(), matrix_0, true);
+//            windowImageView.setImageBitmap(originalWindowBitmap);
         }
 
 //        // Capture time
@@ -147,12 +191,14 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("topLine")) {
             boolean topLine = intent.getBooleanExtra("topLine", false);
             TextView topLineTextView = findViewById(R.id.topLineTextView);
+            topLineTextView.setTextColor(Color.rgb(0, 0, 255));
             topLineTextView.setText(peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f",(peaks.get(0)[3])) : "no control line");
             //topLineTextView.setText(String.format("%s", topLine ? "True" : "False"));
         }
         if (intent.hasExtra("topLineName")) {
             String topLineName = intent.getStringExtra("topLineName");
             TextView topLineNameTextView = findViewById(R.id.topLineNameTextView);
+            topLineNameTextView.setTextColor(Color.rgb(0, 0, 255));
             topLineNameTextView.setText(topLineName);
         }
 
@@ -161,11 +207,13 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             boolean middleLine = intent.getBooleanExtra("middleLine", false);
             TextView middleLineTextView = findViewById(R.id.middleLineTextView);
             middleLineTextView.setText(peaks.size() > 1 ? String.format("%.1f",(peaks.get(1)[3])) : "no test line");
+            middleLineTextView.setTextColor(Color.rgb(72,255,0));
             //middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
         }
         if (intent.hasExtra("middleLineName")) {
             String middleLineName = intent.getStringExtra("middleLineName");
             TextView middleLineNameTextView = findViewById(R.id.middleLineNameTextView);
+            middleLineNameTextView.setTextColor(Color.rgb(72,255,0));
             middleLineNameTextView.setText(middleLineName);
         }
 
@@ -283,6 +331,10 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         // Get the current time to use as part of the filename
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss-SSS");
 
+
+                ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
+                originalWindowBitmap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
+
         // Save both the full image and the enhanced image
         try {
             // Save the full image
@@ -293,6 +345,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             fileOutputStream.write(capturedByteArray);
             fileOutputStream.flush();
             fileOutputStream.close();
+
 
             // Save the enhanced image
             filePath = sdIconStorageDir.toString() +
