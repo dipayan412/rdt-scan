@@ -351,7 +351,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             filePath = sdIconStorageDir.toString() +
                     String.format("/%s-%s_cropped.jpg", sampleID,sdf.format(new Date()));
 
-            ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
+            windowimagestream=new ByteArrayOutputStream();
             windowimageBitMap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
 
 
