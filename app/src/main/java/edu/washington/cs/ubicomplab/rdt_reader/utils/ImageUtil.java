@@ -301,7 +301,7 @@ public final class ImageUtil {
         double peak=averageLine[peakLoc];
 
         // calculate baseline and peak height
-        if (loc_lower>=0 && loc_upper<averageLine.length-1) {
+        if (loc_lower>=0 && loc_upper<=averageLine.length-1) {
             yGap=averageLine[loc_upper]-averageLine[loc_lower];
             yBase=averageLine[loc_lower];
         } else if (loc_lower <= 0) {
