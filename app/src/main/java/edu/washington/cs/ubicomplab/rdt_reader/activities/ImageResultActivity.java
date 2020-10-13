@@ -226,16 +226,15 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             boolean middleLine = intent.getBooleanExtra("middleLine", false);
             TextView middleLineTextView = findViewById(R.id.middleLineTextView);
             middleLineTextView.setText(peaks.size() > 1 ? String.format("%.1f",(peaks.get(1)[3])) : "no test line");
-            middleLineTextView.setTextColor(Color.rgb(72,255,0));
+            middleLineTextView.setTextColor(Color.rgb(51,153,0));
             //middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
         }
         if (intent.hasExtra("middleLineName")) {
             String middleLineName = intent.getStringExtra("middleLineName");
             TextView middleLineNameTextView = findViewById(R.id.middleLineNameTextView);
-            middleLineNameTextView.setTextColor(Color.rgb(72,255,0));
+            middleLineNameTextView.setTextColor(Color.rgb(51,153,0));
             middleLineNameTextView.setText(middleLineName);
         }
-
         // Bottom line
         if (numberOfLines > 2 && intent.hasExtra("bottomLine")) {
             boolean bottomLine = intent.getBooleanExtra("bottomLine", false);
@@ -380,11 +379,11 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             fileOutputStream.close();
 
             //Save highres image
-            filePath = sdIconStorageDir.toString() +
+            String filePathhires = sdIconStorageDir.toString() +
                     String.format("/%s-%s_hires.jpg", sampleID,sdf.format(new Date()));
             ByteArrayOutputStream hiresimagestream=new ByteArrayOutputStream();
             hiresBitMap.compress(Bitmap.CompressFormat.JPEG,100,hiresimagestream);
-            fileOutputStream = new FileOutputStream(filePath);
+            fileOutputStream = new FileOutputStream(filePathhires);
             fileOutputStream.write(hiresimagestream.toByteArray());
             //fileOutputStream.write(windowByteArray);
             fileOutputStream.flush();
