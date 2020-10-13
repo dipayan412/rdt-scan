@@ -1100,17 +1100,18 @@ public class ImageProcessor {
                     Point pt1_control = new Point(peaks.get(0)[0], 0);
                     Point pt2_control = new Point(peaks.get(0)[0], 4);
                     if(topLine)
-                        Imgproc.line(resultWindowMat, pt1_control, pt2_control, new Scalar(255, 166, 0), 1);
+//                        Imgproc.line(resultWindowMat, pt1_control, pt2_control, new Scalar(255, 166, 0), 1);
+                        Log.d(TAG, "topline: " + topLine);
                     else if(middleLine) {
                         peaks.add(0, null);
-                        Imgproc.line(resultWindowMat, pt1_control, pt2_control, new Scalar(72, 255, 0), 1);
+//                        Imgproc.line(resultWindowMat, pt1_control, pt2_control, new Scalar(72, 255, 0), 1);
                     }
                 }
                 continue;
             }
             Point pt1_control = new Point(peaks.get(0)[0], 0);
             Point pt2_control = new Point(peaks.get(0)[0], 4);
-            Imgproc.line(resultWindowMat, pt1_control, pt2_control, new Scalar(255, 166, 0), 1);
+//            Imgproc.line(resultWindowMat, pt1_control, pt2_control, new Scalar(255, 166, 0), 1);
 
             Point pt1_test=new Point(peaks.get(1)[0],0);
             Point pt2_test=new Point(peaks.get(1)[0],4);
@@ -1118,7 +1119,7 @@ public class ImageProcessor {
             Log.d(TAG,"ControlPt1="+Integer.toString(0)+"," +Double.toString(peaks.get(0)[0]));
             Log.d(TAG,"ControlPt2="+resultWindowMat.width()+"," +Double.toString(peaks.get(0)[0]));
 
-            Imgproc.line(resultWindowMat,pt1_test,pt2_test,new Scalar(72,255,0),1);
+//            Imgproc.line(resultWindowMat,pt1_test,pt2_test,new Scalar(72,255,0),1);
 
             // Determine which peaks correspond to which lines
             int detectedControlLineIndex = -1;

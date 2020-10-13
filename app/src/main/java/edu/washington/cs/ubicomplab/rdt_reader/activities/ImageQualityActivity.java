@@ -123,14 +123,9 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
 
         // Pass the image quality and interpretation data to the new activity
         final ImageQualityActivity self = this;
-        rdtcaptureresult=rdtCaptureResult;
-        rdtinterpretresult=rdtInterpretationResult;
-        time=timeTaken;
-
-        captureByteArray = ImageUtil.matToByteArray(rdtCaptureResult.resultMat);
-        windowByteArray = ImageUtil.matToByteArray(rdtInterpretationResult.resultMat);
-
-       /* runOnUiThread(new Runnable() {
+        final byte[] captureByteArray = ImageUtil.matToByteArray(rdtCaptureResult.resultMat);
+        final byte[] windowByteArray = ImageUtil.matToByteArray(rdtInterpretationResult.resultMat, false);
+        runOnUiThread(new Runnable() {
             @Override
             public void run() {
                 Intent i = new Intent(self, ImageResultActivity.class);
