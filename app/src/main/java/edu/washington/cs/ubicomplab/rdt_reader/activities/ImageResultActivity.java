@@ -207,13 +207,13 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             boolean middleLine = intent.getBooleanExtra("middleLine", false);
             TextView middleLineTextView = findViewById(R.id.middleLineTextView);
             middleLineTextView.setText(peaks.size() > 1 ? String.format("%.1f",(peaks.get(1)[3])) : "no test line");
-            middleLineTextView.setTextColor(Color.rgb(72,255,0));
+            middleLineTextView.setTextColor(Color.rgb(51,153,0));
             //middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
         }
         if (intent.hasExtra("middleLineName")) {
             String middleLineName = intent.getStringExtra("middleLineName");
             TextView middleLineNameTextView = findViewById(R.id.middleLineNameTextView);
-            middleLineNameTextView.setTextColor(Color.rgb(72,255,0));
+            middleLineNameTextView.setTextColor(Color.rgb(51,153,0));
             middleLineNameTextView.setText(middleLineName);
         }
 
