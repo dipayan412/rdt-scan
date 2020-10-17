@@ -914,7 +914,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_REGIONS,
                     new MeteringRectangle[]{mr});
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE,
-                    CaptureRequest.CONTROL_AWB_MODE_AUTO);
+                    CaptureRequest.CONTROL_AWB_MODE_DAYLIGHT);
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AWB_REGIONS,
                     new MeteringRectangle[]{mr});
 

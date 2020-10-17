@@ -967,6 +967,7 @@ public class ImageProcessor {
      */
     public RDTInterpretationResult interpretRDT(Mat inputMat, MatOfPoint2f boundary) {
         Mat resultWindowMat;
+        Mat unEnhancedResultWindow = new Mat();
 
         boolean topLine = false;
         boolean middleLine = false;
@@ -1023,6 +1024,7 @@ public class ImageProcessor {
                     minMaxLocResult.minVal, minMaxLocResult.minLoc,
                     minMaxLocResult.maxVal, minMaxLocResult.maxLoc));
 
+            resultWindowMat.copyTo(unEnhancedResultWindow);
             // Enhance the result window if there is something worth enhancing in the first place
             if (sigma.get(0, 0)[0] > RESULT_WINDOW_ENHANCE_THRESHOLD)
                 resultWindowMat = enhanceResultWindow(resultWindowMat);
@@ -1198,7 +1200,7 @@ public class ImageProcessor {
             cnt++;
         } while (!tuned && cnt < 10);
 
-        return new RDTInterpretationResult(resultWindowMat,
+        return new RDTInterpretationResult(unEnhancedResultWindow,
                 topLine, middleLine, bottomLine,
                 mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, hasTooMuchBlood, mRDT.numberOfLines, peaks,Redpeaks, avgIntensities);
     }
