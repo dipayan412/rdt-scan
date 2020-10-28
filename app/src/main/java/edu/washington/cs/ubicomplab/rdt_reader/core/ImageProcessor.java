@@ -1000,6 +1000,7 @@ public class ImageProcessor {
 
         int cnt = 0;
         do {
+            count++;
             // Crop the result window
             resultWindowMat = cropResultWindow(inputMat, boundary, offset);
             // Skip if there is no window to interpret
