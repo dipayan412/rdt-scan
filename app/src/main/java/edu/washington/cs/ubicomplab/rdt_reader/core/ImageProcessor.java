@@ -783,6 +783,9 @@ public class ImageProcessor {
                 cropResultWindowWithFiducial(correctedMat, offset) :
                 new Rect(mRDT.resultWindowRect.x + offset, mRDT.resultWindowRect.y, mRDT.resultWindowRect.width, mRDT.resultWindowRect.height);
 
+        Imgproc.rectangle(temp, resultWindowRect.tl(), resultWindowRect.br(), new Scalar(155), 1);
+        Imgproc.putText(temp, "" + count, resultWindowRect.tl(), Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(155),1);
+
         if (resultWindowRect.width == 0 || resultWindowRect.height == 0)
             return new Mat();
 
