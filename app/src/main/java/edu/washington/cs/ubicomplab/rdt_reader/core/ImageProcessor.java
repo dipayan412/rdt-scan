@@ -774,6 +774,8 @@ public class ImageProcessor {
      */
     private Mat cropResultWindow(Mat inputMat, MatOfPoint2f boundary, int offset) {
         Mat correctedMat = correctPerspective(inputMat, boundary);
+        if(temp.cols() == 0 || temp.rows() == 0)
+            correctedMat.assignTo(temp);
 
         // If fiducials are specified, use them to improve the estimate of the
         // result window's location, otherwise use the default rectangle specified by the user
