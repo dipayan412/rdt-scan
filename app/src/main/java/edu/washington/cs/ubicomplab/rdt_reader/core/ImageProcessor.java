@@ -965,6 +965,8 @@ public class ImageProcessor {
      * @param boundary: the corners of the bounding box around the detected RDT
      * @return an {@link RDTInterpretationResult} indicating the test results
      */
+    Mat temp = new Mat();
+    int count = 0;
     public RDTInterpretationResult interpretRDT(Mat inputMat, MatOfPoint2f boundary) {
         Mat resultWindowMat;
         Mat unEnhancedResultWindow = new Mat();
