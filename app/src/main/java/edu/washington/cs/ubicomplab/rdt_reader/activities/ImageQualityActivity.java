@@ -186,8 +186,8 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
             public void run() {
                 Intent i = new Intent(self, ImageResultActivity.class);
                 i.addFlags(Intent.FLAG_ACTIVITY_FORWARD_RESULT);
-                i.putExtra("captured", captureByteArray);
-                i.putExtra("window", windowByteArray);
+                i.putExtra("captured", true);
+                i.putExtra("window", true);
                 i.putExtra("topLine", rdtinterpretresult.topLine);
                 i.putExtra("middleLine", rdtinterpretresult.middleLine);
                 i.putExtra("bottomLine", rdtinterpretresult.bottomLine);
