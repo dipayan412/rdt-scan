@@ -333,6 +333,15 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             Image image = reader.acquireNextImage();
             Mat hiresMat = ImageUtil.imageToRGBMat(image);
             image.close();
+            RDTCaptureResult captureResult = processor.assessImage(hiresMat, flashEnabled);
+            RDTInterpretationResult interpretationResult = processor.interpretRDT(captureResult.resultMat,
+                        captureResult.boundary);
+            if (mImageQualityViewListener != null) {
+                RDTDetectedResult result = mImageQualityViewListener.onRDTDetected(
+                        captureResult, interpretationResult,
+                        System.currentTimeMillis() - timeTaken
+                );
+            }
 
             Double cropwidth=.8;
             Double cropheight=.6;
@@ -431,9 +440,10 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             // If all the quality check were passed, interpret the test result
             RDTInterpretationResult interpretationResult = null;
             if (captureResult.allChecksPassed && isFlat) {
-                interpretationResult = processor.interpretRDT(captureResult.resultMat,
-                        captureResult.boundary);
+//                interpretationResult = processor.interpretRDT(captureResult.resultMat,
+//                        captureResult.boundary);
                 image.close();
+                return RDTDetectedResult.STOP;
             } else {
                 imageQueue.remove();
                 image.close();
@@ -442,18 +452,18 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
             // Determine if the RDT was successfully detected
             RDTDetectedResult result = RDTDetectedResult.CONTINUE;
-            if (mImageQualityViewListener != null) {
-                result = mImageQualityViewListener.onRDTDetected(
-                        captureResult, interpretationResult,
-                        System.currentTimeMillis() - timeTaken
-                );
-            }
+//            if (mImageQualityViewListener != null) {
+//                result = mImageQualityViewListener.onRDTDetected(
+//                        captureResult, interpretationResult,
+//                        System.currentTimeMillis() - timeTaken
+//                );
+//            }
 
             // Garbage collection
-            if (captureResult.resultMat != null)
-                captureResult.resultMat.release();
-            if (interpretationResult != null && interpretationResult.resultMat != null)
-                interpretationResult.resultMat.release();
+//            if (captureResult.resultMat != null)
+//                captureResult.resultMat.release();
+//            if (interpretationResult != null && interpretationResult.resultMat != null)
+//                interpretationResult.resultMat.release();
 
             // Interrupt the thread if a result was found
             /*if (result == RDTDetectedResult.STOP) {
@@ -471,6 +481,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
         protected void onPostExecute(RDTDetectedResult result) {
             //super.onPostExecute(result);
             if(result==RDTDetectedResult.STOP){
+
                 try{
                     mCaptureSession.capture(mCaptureRequestBuilder.build(),null,null);
                 }catch (CameraAccessException e){
