@@ -18,6 +18,7 @@ import java.io.FileOutputStream;
 import java.io.Serializable;
 
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.ImageQualityViewListener;
+import edu.washington.cs.ubicomplab.rdt_reader.utils.AppSingleton;
 import edu.washington.cs.ubicomplab.rdt_reader.views.ImageQualityView;
 import edu.washington.cs.ubicomplab.rdt_reader.R;
 import edu.washington.cs.ubicomplab.rdt_reader.core.RDTCaptureResult;
@@ -129,6 +130,8 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
 
         captureByteArray = ImageUtil.matToByteArray(rdtCaptureResult.resultMat);
         windowByteArray = ImageUtil.matToByteArray(rdtInterpretationResult.resultMat, false);
+
+        AppSingleton.getInstance().setData(captureByteArray, windowByteArray);
        /* runOnUiThread(new Runnable() {
             @Override
             public void run() {
