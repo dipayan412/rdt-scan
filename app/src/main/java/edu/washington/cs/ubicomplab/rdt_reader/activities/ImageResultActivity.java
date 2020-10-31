@@ -143,8 +143,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         // Captured image
         ImageView resultImageView = findViewById(R.id.RDTImageView);
         if (intent.hasExtra("captured")) {
-            capturedByteArray = intent.getExtras().getByteArray("captured");
-            mBitmapToSave = BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
+//            capturedByteArray = intent.getExtras().getByteArray("captured");
+//            mBitmapToSave = BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
 
 
             resultimageBitMap=BitmapFactory.decodeByteArray(AppSingleton.getInstance().getCapturedImageData(), 0, AppSingleton.getInstance().getCapturedImageData().length);
@@ -153,8 +153,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 
         // Enhanced image
         if (intent.hasExtra("window")) {
-            windowByteArray = intent.getExtras().getByteArray("window");
-            mBitmapToSave = BitmapFactory.decodeByteArray(windowByteArray, 0, windowByteArray.length);
+//            windowByteArray = intent.getExtras().getByteArray("window");
+//            mBitmapToSave = BitmapFactory.decodeByteArray(windowByteArray, 0, windowByteArray.length);
             ImageView windowImageView = findViewById(R.id.WindowImageView);
 
             originalWindowBitmap = BitmapFactory.decodeByteArray(AppSingleton.getInstance().getResultWindowData(), 0, AppSingleton.getInstance().getResultWindowData().length);
