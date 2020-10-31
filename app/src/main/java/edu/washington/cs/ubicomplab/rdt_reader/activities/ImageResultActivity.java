@@ -64,6 +64,7 @@ import edu.washington.cs.ubicomplab.rdt_reader.fragments.SettingsDialogFragment;
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.SettingsDialogListener;
 import edu.washington.cs.ubicomplab.rdt_reader.core.Constants;
 import edu.washington.cs.ubicomplab.rdt_reader.model.SampleID;
+import edu.washington.cs.ubicomplab.rdt_reader.utils.AppSingleton;
 
 import static java.text.DateFormat.getDateTimeInstance;
 
@@ -146,7 +147,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             mBitmapToSave = BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
 
 
-            resultimageBitMap=BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
+            resultimageBitMap=BitmapFactory.decodeByteArray(AppSingleton.getInstance().getCapturedImageData(), 0, AppSingleton.getInstance().getCapturedImageData().length);
             resultImageView.setImageBitmap(resultimageBitMap);
         }
 
@@ -156,7 +157,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             mBitmapToSave = BitmapFactory.decodeByteArray(windowByteArray, 0, windowByteArray.length);
             ImageView windowImageView = findViewById(R.id.WindowImageView);
 
-            originalWindowBitmap = BitmapFactory.decodeByteArray(windowByteArray,0,windowByteArray.length);
+            originalWindowBitmap = BitmapFactory.decodeByteArray(AppSingleton.getInstance().getResultWindowData(), 0, AppSingleton.getInstance().getResultWindowData().length);
 
             if(peaks.size() > 0) {
 
@@ -361,7 +362,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             String filePath = sdIconStorageDir.toString() +
                     String.format("/%s-%s_full.jpg",sampleID, sdf.format(new Date()));
             FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-            fileOutputStream.write(capturedByteArray);
+            fileOutputStream.write(AppSingleton.getInstance().getCapturedImageData());
             fileOutputStream.flush();
             fileOutputStream.close();
 
