@@ -11,6 +11,7 @@ package edu.washington.cs.ubicomplab.rdt_reader.views;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
@@ -63,7 +64,9 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Rect;
+import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -79,14 +82,17 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
+import edu.washington.cs.ubicomplab.rdt_reader.activities.ImageQualityActivity;
 import edu.washington.cs.ubicomplab.rdt_reader.core.Constants;
 import edu.washington.cs.ubicomplab.rdt_reader.core.ImageProcessor;
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.ImageQualityViewListener;
 import edu.washington.cs.ubicomplab.rdt_reader.core.RDTCaptureResult;
 import edu.washington.cs.ubicomplab.rdt_reader.core.RDTInterpretationResult;
+import edu.washington.cs.ubicomplab.rdt_reader.utils.AppSingleton;
 import edu.washington.cs.ubicomplab.rdt_reader.utils.ImageUtil;
 
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.*;
+import static org.opencv.imgproc.Imgproc.cvtColor;
 
 /**
  * A {@link View} for showing a real-time camera feed during image capture and
@@ -107,6 +113,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
     private boolean showViewport;
     private boolean showFeedback;
     private AutoFitTextureView mTextureView;
+    private ProgressDialog progressDialog;
 
     // Image quality variables
     public boolean flashEnabled = true;
@@ -303,7 +310,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
             // Check that an image is available
             final Image image = reader.acquireNextImage();
-            Log.d(TAG,"Image Height " +image.getHeight()+" Image Width "+ image.getWidth());
+//            Log.d(TAG,"Image Height " +image.getHeight()+" Image Width "+ image.getWidth());
 
             if (image == null)
                 return;
@@ -331,17 +338,36 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
         public void onImageAvailable(ImageReader reader) {
             Log.d(TAG,"captured single image");
             Image image = reader.acquireNextImage();
+
+            long timeTaken = System.currentTimeMillis() - startTime;
+
+            startTime = System.currentTimeMillis();
             Mat hiresMat = ImageUtil.imageToRGBMat(image);
+            timeTaken = System.currentTimeMillis() - startTime;
             image.close();
-            RDTCaptureResult captureResult = processor.assessImage(hiresMat, flashEnabled);
-            RDTInterpretationResult interpretationResult = processor.interpretRDT(captureResult.resultMat,
-                        captureResult.boundary);
-            if (mImageQualityViewListener != null) {
-                RDTDetectedResult result = mImageQualityViewListener.onRDTDetected(
-                        captureResult, interpretationResult,
-                        System.currentTimeMillis() - timeTaken
-                );
-            }
+
+            Mat grayMat = new Mat();
+            cvtColor(hiresMat, grayMat, Imgproc.COLOR_RGBA2GRAY);
+//            startTime = System.currentTimeMillis();
+            MatOfPoint2f boundary = processor.detectRDT(grayMat);
+            Mat croppedMat = ImageUtil.cropInputMat(hiresMat, CROP_RATIO);
+            MatOfPoint2f croppedBoundary = ImageUtil.adjustBoundary(hiresMat, boundary, CROP_RATIO);
+            grayMat.release();
+//            RDTCaptureResult captureResult = processor.assessImage(hiresMat, flashEnabled);
+            RDTInterpretationResult interpretationResult = processor.interpretRDT(croppedMat,
+                    croppedBoundary);
+//            if (mImageQualityViewListener != null) {
+//                RDTDetectedResult result = mImageQualityViewListener.onRDTDetected(
+//                        captureResult, interpretationResult,
+//                        System.currentTimeMillis() - timeTaken
+//                );
+//            }
+
+            ((ImageQualityActivity)mActivity).captureByteArray = ImageUtil.matToByteArray(croppedMat);
+            ((ImageQualityActivity)mActivity).windowByteArray = ImageUtil.matToByteArray(interpretationResult.resultMat, false);
+            ((ImageQualityActivity)mActivity).rdtinterpretresult = interpretationResult;
+            ((ImageQualityActivity)mActivity).time = System.currentTimeMillis() - timeTaken;
+
 
             Double cropwidth=.8;
             Double cropheight=.6;
@@ -353,7 +379,10 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             Rect cropRect=new Rect(neworiginX,neworiginY,newWidth,newHeight);
             hiresMat = hiresMat.submat(cropRect);
             Core.rotate(hiresMat,hiresMat,Core.ROTATE_90_CLOCKWISE);
+
             mImageQualityViewListener.onSingleImage(hiresMat);
+            progressDialog.dismiss();
+            mOnImageAvailableThread.interrupt();
         }
     };
     /**
@@ -483,6 +512,8 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             if(result==RDTDetectedResult.STOP){
 
                 try{
+                    progressDialog.show();
+                    startTime = System.currentTimeMillis();
                     mCaptureSession.capture(mCaptureRequestBuilder.build(),null,null);
                 }catch (CameraAccessException e){
                     e.printStackTrace();
@@ -490,6 +521,8 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             }
         }
     }
+
+    long startTime = 0;
 
     /////////////////////////////////////////
     // Methods
@@ -591,6 +624,12 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             mInstructionText.setVisibility(GONE);
             mCaptureProgressBar.setVisibility(GONE);
         }
+
+        progressDialog = new ProgressDialog(mActivity);
+        progressDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        progressDialog.setMessage("Work in progress. Please wait...");
+        progressDialog.setIndeterminate(true);
+        progressDialog.setCancelable(false);
     }
 
     /**

@@ -36,11 +36,11 @@ import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.DEFAULT_RDT
 public class ImageQualityActivity extends Activity implements ImageQualityViewListener {
     ImageQualityView mImageQualityView;
     private String TAG="ImageQualityActivity";
-    byte[] captureByteArray=new byte[0];
-    byte[] windowByteArray=new byte[0];
-    RDTInterpretationResult rdtinterpretresult;
+    public byte[] captureByteArray=new byte[0];
+    public byte[] windowByteArray=new byte[0];
+    public RDTInterpretationResult rdtinterpretresult;
     RDTCaptureResult rdtcaptureresult;
-    long time;
+    public long time;
 
 
     /**
@@ -128,10 +128,10 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
        rdtinterpretresult=rdtInterpretationResult;
        time=timeTaken;
 
-        captureByteArray = ImageUtil.matToByteArray(rdtCaptureResult.resultMat);
-        windowByteArray = ImageUtil.matToByteArray(rdtInterpretationResult.resultMat, false);
-
-        AppSingleton.getInstance().setData(captureByteArray, windowByteArray);
+//        captureByteArray = ImageUtil.matToByteArray(rdtCaptureResult.resultMat);
+//        windowByteArray = ImageUtil.matToByteArray(rdtInterpretationResult.resultMat, false);
+//
+//        AppSingleton.getInstance().setData(captureByteArray, windowByteArray);
        /* runOnUiThread(new Runnable() {
             @Override
             public void run() {
@@ -171,6 +171,8 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
 
         Bitmap hiresBitMap = Bitmap.createBitmap(hiresMat.width(), hiresMat.height(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(hiresMat, hiresBitMap);
+
+        AppSingleton.getInstance().setData(captureByteArray, windowByteArray);
 
         try {
             ByteArrayOutputStream bytes=new ByteArrayOutputStream();

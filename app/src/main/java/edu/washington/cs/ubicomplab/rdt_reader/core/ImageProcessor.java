@@ -11,6 +11,7 @@ package edu.washington.cs.ubicomplab.rdt_reader.core;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.provider.Settings;
 import android.util.Log;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -257,11 +258,11 @@ public class ImageProcessor {
      * @return the corners of the bounding box around the detected RDT if it is present,
      * otherwise a blank MatOfPoint2f
      */
-    private MatOfPoint2f detectRDT(Mat inputMat) {
+    public MatOfPoint2f detectRDT(Mat inputMat) {
         double currentTime = System.currentTimeMillis();
 
         // Resize inputMat for quicker computation
-        double scale = SIFT_RESIZE_FACTOR;
+        double scale = 0.1;//SIFT_RESIZE_FACTOR;
         Mat scaledMat = new Mat();
         Imgproc.resize(inputMat, scaledMat, new Size(), scale, scale, Imgproc.INTER_LINEAR);
 
@@ -275,7 +276,9 @@ public class ImageProcessor {
         Mat inDescriptor = new Mat();
         MatOfKeyPoint inKeypoints = new MatOfKeyPoint();
         MatOfPoint2f boundary = new MatOfPoint2f();
+        long startTime = System.currentTimeMillis();
         mRDT.detector.detectAndCompute(scaledMat, mask, inKeypoints, inDescriptor);
+        Log.d("detectAndCompute", "" + (System.currentTimeMillis() - startTime));
 
         // Skip if no features are found
         if (mRDT.refDescriptor.size().equals(new Size(0,0))) {
@@ -289,11 +292,14 @@ public class ImageProcessor {
 
         // Match feature descriptors using KNN
         List<MatOfDMatch> matches = new ArrayList<>();
+        startTime = System.currentTimeMillis();
         mRDT.matcher.knnMatch(mRDT.refDescriptor, inDescriptor, matches,
                 2, new Mat(), false);
+        Log.d("knnMatch", "" + (System.currentTimeMillis() - startTime));
 
         // Identify good matches based on nearest neighbor distance ratio test
         ArrayList<DMatch> goodMatches = new ArrayList<>();
+        startTime = System.currentTimeMillis();
         for (int i = 0; i < matches.size(); i++) {
             DMatch[] dMatches = matches.get(i).toArray();
             if (dMatches.length >= 2) {
@@ -303,6 +309,7 @@ public class ImageProcessor {
                     goodMatches.add(m);
             }
         }
+        Log.d("goodMatchCount", "" + (System.currentTimeMillis() - startTime));
         Log.d("ImageProcessor","Number of Good Matches "+Integer.toString(goodMatches.size()));
         MatOfDMatch goodMatchesMat = new MatOfDMatch();
         goodMatchesMat.fromList(goodMatches);
@@ -341,7 +348,9 @@ public class ImageProcessor {
 
                 // Get the corresponding corners in the scene
                 Mat sceneCorners = new Mat(4, 1, CvType.CV_32FC2);
+                startTime = System.currentTimeMillis();
                 perspectiveTransform(objCorners, sceneCorners, H);
+                Log.d("perspectiveTransform", "" + (System.currentTimeMillis() - startTime));
 
                 // Extract corners for bounding box and put them in a MatOfPoint2f
                 Point tlBoundary = new Point(sceneCorners.get(0, 0)[0]/scale,
