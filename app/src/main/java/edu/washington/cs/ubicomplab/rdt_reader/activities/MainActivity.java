@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
+import edu.washington.cs.ubicomplab.rdt_reader.core.ImageProcessor;
 import edu.washington.cs.ubicomplab.rdt_reader.fragments.SettingsDialogFragment;
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.SettingsDialogListener;
 import edu.washington.cs.ubicomplab.rdt_reader.core.Constants;
@@ -233,5 +234,19 @@ public class MainActivity extends AppCompatActivity implements
 
         setContentView(R.layout.activity_main);
         initViews();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // The gesture threshold expressed in dp
+        float GESTURE_THRESHOLD_DP = 16.0f;
+
+// Get the screen's density scale
+        float scale = getResources().getDisplayMetrics().density;
+// Convert the dps to pixels, based on density scale
+        int mGestureThreshold = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
+//        Resources res = getResources();
     }
 }

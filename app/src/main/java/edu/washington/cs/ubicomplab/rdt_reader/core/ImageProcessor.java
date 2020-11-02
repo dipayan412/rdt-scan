@@ -11,6 +11,7 @@ package edu.washington.cs.ubicomplab.rdt_reader.core;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Environment;
 import android.provider.Settings;
 import android.util.Log;
 
@@ -41,6 +42,11 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.core.Scalar;
 
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -122,6 +128,19 @@ public class ImageProcessor {
         // Loads the metadata related to the target RDT
         mRDT = new RDT(activity.getApplicationContext(), rdtName);
 
+//        MatOfKeyPoint matOfKeyPoint = mRDT.refKeypoints;
+//        float[] data = new float[(int) matOfKeyPoint.total() * matOfKeyPoint.channels()];
+//        matOfKeyPoint.get(0, 0, data);
+//        try {
+//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+//            ObjectOutput out = new ObjectOutputStream(bos);
+//            out.writeObject(data);
+//            out.close();
+//            byte[] buf = bos.toByteArray();
+//        } catch(Exception e) {
+//            e.printStackTrace();
+//        }
+
         // Calculates a baseline expected sharpness level for the target RDT
         // TODO: smarter place to put this?
         mRDT.refImgSharpness = measureSharpness(mRDT.refImg);
@@ -167,6 +186,8 @@ public class ImageProcessor {
         }
     }
 
+
+
     /**
      * Returns the rectangle corresponding to the viewfinder that the user sees
      * (i.e., region-of-interest) for image quality
@@ -204,7 +225,7 @@ public class ImageProcessor {
         if (passed) {
 
             // Locate the RDT design within the camera frame
-            MatOfPoint2f boundary = detectRDT(grayMat);
+            MatOfPoint2f boundary = detectRDT(grayMat, 0.5);
             grayMat.release();
 
             // Check the placement, size, and orientation of the RDT,
@@ -258,11 +279,11 @@ public class ImageProcessor {
      * @return the corners of the bounding box around the detected RDT if it is present,
      * otherwise a blank MatOfPoint2f
      */
-    public MatOfPoint2f detectRDT(Mat inputMat) {
+    public MatOfPoint2f detectRDT(Mat inputMat, double scale) {
         double currentTime = System.currentTimeMillis();
 
         // Resize inputMat for quicker computation
-        double scale = 0.1;//SIFT_RESIZE_FACTOR;
+//        double scale = 0.1;//SIFT_RESIZE_FACTOR;
         Mat scaledMat = new Mat();
         Imgproc.resize(inputMat, scaledMat, new Size(), scale, scale, Imgproc.INTER_LINEAR);
 
@@ -796,6 +817,19 @@ public class ImageProcessor {
 
 //        "RESULT_WINDOW_TOP_LEFT": [1622, 527],
 //        "RESULT_WINDOW_BOTTOM_RIGHT": [2122, 627],
+
+//        "covid19-ghl": {
+//            "REF_IMG": "covid19_ghl_ref_v4",
+//                    "VIEW_FINDER_SCALE": 0.6,
+//                    "RESULT_WINDOW_TOP_LEFT": [1572, 527],
+//            "RESULT_WINDOW_BOTTOM_RIGHT": [2022, 627],
+//            "TOP_LINE_POSITION": [1650,577],
+//            "MIDDLE_LINE_POSITION": [1950,577],
+//            "TOP_LINE_NAME": "Control",
+//                    "MIDDLE_LINE_NAME": "Test",
+//                    "LINE_INTENSITY": 85,
+//                    "CHECK_GLARE": false
+//        }
 
         Imgproc.rectangle(temp, resultWindowRect.tl(), resultWindowRect.br(), new Scalar(155), 5);
         Imgproc.line(temp,new Point(1650,577), new Point(1950,577),new Scalar(72,255,0),5);

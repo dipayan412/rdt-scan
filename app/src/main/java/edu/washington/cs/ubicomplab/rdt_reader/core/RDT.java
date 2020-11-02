@@ -4,6 +4,7 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -20,6 +21,7 @@ import org.opencv.imgproc.Imgproc;
 import org.opencv.xfeatures2d.SIFT;
 
 import java.io.InputStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -168,7 +170,13 @@ public class RDT {
             refKeypoints = new MatOfKeyPoint();
             detector = SIFT.create();
             matcher = BFMatcher.create(BFMatcher.BRUTEFORCE, false);
+
+            Mat scaledMat = new Mat();
+            Imgproc.resize(refImg, scaledMat, new Size(), 1.0, 1.0, Imgproc.INTER_LINEAR);
+
+            long startTime = System.currentTimeMillis();
             detector.detectAndCompute(refImg, new Mat(), refKeypoints, refDescriptor);
+            Log.d("RefDetectAndCompute", "" + (System.currentTimeMillis() - startTime));
         } catch (Exception ex) {
             ex.printStackTrace();
         }

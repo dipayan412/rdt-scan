@@ -339,7 +339,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             Log.d(TAG,"captured single image");
             Image image = reader.acquireNextImage();
 
-            long timeTaken = System.currentTimeMillis() - startTime;
+            Log.d("singleOnImageAvailable", "" + (System.currentTimeMillis() - startTime));
 
             startTime = System.currentTimeMillis();
             Mat hiresMat = ImageUtil.imageToRGBMat(image);
@@ -349,13 +349,15 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             Mat grayMat = new Mat();
             cvtColor(hiresMat, grayMat, Imgproc.COLOR_RGBA2GRAY);
 //            startTime = System.currentTimeMillis();
-            MatOfPoint2f boundary = processor.detectRDT(grayMat);
+            MatOfPoint2f boundary = processor.detectRDT(grayMat, 0.15625);
             Mat croppedMat = ImageUtil.cropInputMat(hiresMat, CROP_RATIO);
             MatOfPoint2f croppedBoundary = ImageUtil.adjustBoundary(hiresMat, boundary, CROP_RATIO);
             grayMat.release();
 //            RDTCaptureResult captureResult = processor.assessImage(hiresMat, flashEnabled);
+            startTime = System.currentTimeMillis();
             RDTInterpretationResult interpretationResult = processor.interpretRDT(croppedMat,
                     croppedBoundary);
+            Log.d("interpretationResult", "" + (System.currentTimeMillis() - startTime));
 //            if (mImageQualityViewListener != null) {
 //                RDTDetectedResult result = mImageQualityViewListener.onRDTDetected(
 //                        captureResult, interpretationResult,
