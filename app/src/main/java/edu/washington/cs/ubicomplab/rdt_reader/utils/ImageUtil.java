@@ -14,6 +14,8 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.media.Image;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Base64;
 import android.util.Log;
 
@@ -53,6 +55,12 @@ import static org.opencv.imgproc.Imgproc.cvtColor;
  */
 public final class ImageUtil {
     private static String TAG = "ImageUtil";
+    public static SavGolFilter sgfilter;
+
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public ImageUtil() {
+        sgfilter=new SavGolFilter(5,2);
+    }
 
     /**
      * Convert Android's Image class to an OpenCV Mat
@@ -222,6 +230,9 @@ public final class ImageUtil {
         ArrayList<double[]> peaks = new ArrayList<>();
         ArrayList<double[]> troughs = new ArrayList<>();
         Log.d(TAG,"array "+ Arrays.toString(arr));
+
+        // apply sg smoothing here
+        arr = sgfilter.applySGfilter(arr);
         // Initialize peak tracking variables
         double min_val = arr[0];
         double max_val = arr[0];

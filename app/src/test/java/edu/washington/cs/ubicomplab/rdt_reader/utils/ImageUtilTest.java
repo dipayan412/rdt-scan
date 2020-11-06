@@ -10,17 +10,20 @@ import java.util.logging.Logger;
 import android.util.Log;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 
 class ImageUtilTest {
-    ImageUtil imageUtil;
+    static ImageUtil imageUtil;
 //    double[] curve= null;
     int controlPeakLoc=37;
     int signalPeakLoc=108;
     static double [] curve=null;
     @BeforeAll
     static void beforeAll() {
+        imageUtil= new ImageUtil();
         try {
             curve=loadResourceAsdoubleArray();
         } catch (IOException e) {
@@ -92,6 +95,12 @@ class ImageUtilTest {
     void peakLinearBaselineCorrected0Width() {
         double peakHeight= ImageUtil.peakLinearBaselineCorrected(curve,0,signalPeakLoc);
         assertEquals(peakHeight,0);
+    }
+
+    @Test
+    void sgfilterTest() {
+        double [] smoothed=imageUtil.sgfilter.applySGfilter(curve);
+        assertEquals(smoothed[0],227.18440118438227);
     }
 }
 
