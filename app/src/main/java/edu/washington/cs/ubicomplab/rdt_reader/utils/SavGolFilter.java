@@ -16,12 +16,7 @@ import java.util.stream.IntStream;
 
 public class SavGolFilter {
 
-    double[] coefficients;
-
-    @RequiresApi(api = Build.VERSION_CODES.N)
-    public SavGolFilter(int sideN, int polyorder) {
-        this.coefficients = calculateSGCoefficients(sideN,polyorder);
-    }
+    public static double[] coefficients;
 
     private static double[] calculateExponential(int[] arr, int exp) {
         int len=arr.length;
@@ -35,7 +30,7 @@ public class SavGolFilter {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public double[] calculateSGCoefficients(int sideN, int polyorder){
+    public static double[] calculateSGCoefficients(int sideN, int polyorder){
         int windowsize=sideN*2+1;
         Array2DRowRealMatrix A = new Array2DRowRealMatrix(windowsize,polyorder+1);
 
@@ -66,7 +61,12 @@ public class SavGolFilter {
         return coeff;
     }
 
-    public double[] applySGfilter(double[] signal) {
+    @RequiresApi(api = Build.VERSION_CODES.N)
+    public static double[] applySGfilter(double[] signal) {
+        if (coefficients == null) {
+            coefficients=calculateSGCoefficients(5,2);
+        }
+
         int len=coefficients.length;
         int padding=(len-1)/2;
 

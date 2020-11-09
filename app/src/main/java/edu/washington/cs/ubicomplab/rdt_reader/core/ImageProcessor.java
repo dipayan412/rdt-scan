@@ -10,6 +10,8 @@ package edu.washington.cs.ubicomplab.rdt_reader.core;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -964,6 +966,7 @@ public class ImageProcessor {
      * @param boundary: the corners of the bounding box around the detected RDT
      * @return an {@link RDTInterpretationResult} indicating the test results
      */
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public RDTInterpretationResult interpretRDT(Mat inputMat, MatOfPoint2f boundary) {
         Mat resultWindowMat;
         Mat unEnhancedResultWindow = new Mat();
@@ -1069,6 +1072,7 @@ public class ImageProcessor {
             }
 
             // Detect the peaks
+
             peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
             Redpeaks = ImageUtil.detectPeaks(avgRedIntensities, mRDT.lineIntensity, false);
 

@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.logging.Logger;
 import android.util.Log;
@@ -16,14 +17,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 class ImageUtilTest {
-    static ImageUtil imageUtil;
 //    double[] curve= null;
     int controlPeakLoc=37;
     int signalPeakLoc=108;
     static double [] curve=null;
     @BeforeAll
     static void beforeAll() {
-        imageUtil= new ImageUtil();
         try {
             curve=loadResourceAsdoubleArray();
         } catch (IOException e) {
@@ -48,7 +47,7 @@ class ImageUtilTest {
         final String DELIMITER = ",";
         String[] tokens=null;
         BufferedReader fileReader = null;
-        String fileToParse = "src\\test\\java\\edu\\washington\\cs\\ubicomplab\\rdt_reader\\utils\\resource\\averageline.csv";
+        String fileToParse = "src\\test\\java\\edu\\washington\\cs\\ubicomplab\\rdt_reader\\utils\\resource\\testl.csv";
 
         try
         {
@@ -97,10 +96,18 @@ class ImageUtilTest {
         assertEquals(peakHeight,0);
     }
 
+//    @Test
+//    void sgfilterTest() {
+//        ImageUtil imageUtil=new ImageUtil();
+//        double [] smoothed=imageUtil.sgfilter.applySGfilter(curve);
+//        assertEquals(smoothed[0],140.47700784064418);
+//    }
+
+
     @Test
-    void sgfilterTest() {
-        double [] smoothed=imageUtil.sgfilter.applySGfilter(curve);
-        assertEquals(smoothed[0],227.18440118438227);
+    void detectPeaks() {
+        ArrayList <double []> dpks=ImageUtil.detectPeaks(curve,3,false);
+        System.out.println("done");
     }
 }
 
