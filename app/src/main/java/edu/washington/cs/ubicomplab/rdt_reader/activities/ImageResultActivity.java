@@ -181,7 +181,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
                 Utils.matToBitmap(windowMat, windowBitmap);
                 windowimageBitMap = windowBitmap;
             } else {
-                windowimageBitMap=BitmapFactory.decodeByteArray(windowByteArray,0,windowByteArray.length);
+                windowimageBitMap=BitmapFactory.decodeByteArray(AppSingleton.getInstance().getResultWindowData(),0,AppSingleton.getInstance().getResultWindowData().length);
             }
             Matrix matrix = new Matrix();
             matrix.postRotate(90);

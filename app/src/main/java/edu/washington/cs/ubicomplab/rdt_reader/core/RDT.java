@@ -4,13 +4,18 @@ import android.app.ListActivity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.util.Base64;
 import android.util.Log;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.KeyPoint;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfKeyPoint;
 import org.opencv.core.Point;
@@ -23,7 +28,11 @@ import org.opencv.xfeatures2d.SIFT;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
+
+import edu.washington.cs.ubicomplab.rdt_reader.utils.AppSingleton;
 
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.SHARPNESS_GAUSSIAN_BLUR_WINDOW;
 import static org.opencv.imgproc.Imgproc.cvtColor;
@@ -166,16 +175,78 @@ public class RDT {
             Imgproc.GaussianBlur(refImg, refImg, kernel, 0, 0);
 
             // Load the reference image's features
-            refDescriptor = new Mat();
-            refKeypoints = new MatOfKeyPoint();
+
             detector = SIFT.create();
             matcher = BFMatcher.create(BFMatcher.BRUTEFORCE, false);
 
-            Mat scaledMat = new Mat();
-            Imgproc.resize(refImg, scaledMat, new Size(), 1.0, 1.0, Imgproc.INTER_LINEAR);
-
             long startTime = System.currentTimeMillis();
-            detector.detectAndCompute(refImg, new Mat(), refKeypoints, refDescriptor);
+            if(AppSingleton.getInstance().getRefKeypoints() == null) {
+                refDescriptor = new Mat();
+                refKeypoints = new MatOfKeyPoint();
+                MatOfKeyPoint goodkpMat = new MatOfKeyPoint();
+                detector.detectAndCompute(refImg, new Mat(), refKeypoints, refDescriptor);
+
+                ArrayList<KeyPoint> goodkpsList= new ArrayList<KeyPoint> (refKeypoints.toList());
+                int i=0;
+                Iterator<KeyPoint> iter=goodkpsList.listIterator();
+                while (iter.hasNext()){
+                    KeyPoint kp=iter.next();
+                    Log.d("RDT","response "+String.valueOf(kp.response));
+                    if(kp.response < 0.04){
+                        i++;
+                        iter.remove();
+                        Log.d("RDT","goodkpsList size"+goodkpsList.size());
+                    }
+                }
+                goodkpMat.fromList(goodkpsList);
+                detector.compute(refImg, goodkpMat, refDescriptor);
+                refKeypoints = goodkpMat;
+
+                AppSingleton.getInstance().setRefKeypoints(goodkpMat);
+//                AppSingleton.getInstance().setRefKeypoints(refKeypoints);
+                AppSingleton.getInstance().setRefDescriptor(refDescriptor);
+
+                Gson gson = new Gson();
+
+                JsonObject obj1 = new JsonObject();
+                int cols = goodkpMat.cols();
+                int rows = goodkpMat.rows();
+                int elemSize = (int) goodkpMat.elemSize();
+                float[] data = new float[rows * 7];
+                goodkpMat.get(0, 0, data);
+                obj1.addProperty("rows", goodkpMat.rows());
+                obj1.addProperty("cols", goodkpMat.cols());
+                obj1.addProperty("type", goodkpMat.type());
+
+                // We cannot set binary data to a json object, so:
+                // Encoding data byte array to Base64.
+                String dataString = gson.toJson(data);//new String(Base64.encode(data, Base64.DEFAULT));
+
+                obj1.addProperty("data", dataString);
+                String json1 = gson.toJson(obj1);
+
+                JsonObject obj2 = new JsonObject();
+                cols = goodkpMat.cols();
+                rows = goodkpMat.rows();
+                elemSize = (int) goodkpMat.elemSize();
+                byte[] data2 = new byte[cols * rows * elemSize];
+                refDescriptor.get(0, 0, data);
+                obj2.addProperty("rows", refDescriptor.rows());
+                obj2.addProperty("cols", refDescriptor.cols());
+                obj2.addProperty("type", refDescriptor.type());
+
+                // We cannot set binary data to a json object, so:
+                // Encoding data byte array to Base64.
+                dataString = new String(Base64.encode(data2, Base64.DEFAULT));
+
+                obj2.addProperty("data", dataString);
+                String json2 = gson.toJson(obj2);
+                Log.d("HELLO", "HELLO");
+            } else {
+                refDescriptor = AppSingleton.getInstance().getRefDescriptor();
+                refKeypoints = AppSingleton.getInstance().getRefKeypoints();
+            }
+
             Log.d("RefDetectAndCompute", "" + (System.currentTimeMillis() - startTime));
         } catch (Exception ex) {
             ex.printStackTrace();

@@ -2,12 +2,35 @@ package edu.washington.cs.ubicomplab.rdt_reader.utils;
 
 import android.app.Application;
 
+import org.opencv.core.Mat;
+import org.opencv.core.MatOfKeyPoint;
+
 public final class AppSingleton extends Application {
     private static AppSingleton sInstance;
     private byte[] mCapturedImageData;
     private byte[] mResultWindowData;
+    private Mat refDescriptor;
+    private MatOfKeyPoint refKeypoints;
 
     // Getters & Setters
+
+    public Mat getRefDescriptor() {
+        return refDescriptor;
+    }
+
+    public void setRefDescriptor(Mat refDescriptor) {
+        this.refDescriptor = refDescriptor;
+    }
+
+    public MatOfKeyPoint getRefKeypoints() {
+        return refKeypoints;
+    }
+
+    public void setRefKeypoints(MatOfKeyPoint refKeypoints) {
+        this.refKeypoints = refKeypoints;
+    }
+
+
     public byte[] getCapturedImageData() {
         return mCapturedImageData;
     }

@@ -175,7 +175,7 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
         AppSingleton.getInstance().setData(captureByteArray, windowByteArray);
 
         try {
-            ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+            ByteArrayOutputStream bytes = new ByteArrayOutputStream();
             hiresBitMap.compress(Bitmap.CompressFormat.JPEG, 100, bytes);
             FileOutputStream fo=openFileOutput("hires", Context.MODE_PRIVATE);
             fo.write(bytes.toByteArray());

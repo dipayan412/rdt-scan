@@ -805,7 +805,9 @@ public class ImageProcessor {
      * @return the RDT image tightly cropped and de-skewed around the result window
      */
     private Mat cropResultWindow(Mat inputMat, MatOfPoint2f boundary, int offset) {
+        long startTime = System.currentTimeMillis();
         Mat correctedMat = correctPerspective(inputMat, boundary);
+        Log.d("correctPerspective", "" + (System.currentTimeMillis() - startTime));
         if(temp.cols() == 0 || temp.rows() == 0)
             correctedMat.assignTo(temp);
 
@@ -831,12 +833,60 @@ public class ImageProcessor {
 //                    "CHECK_GLARE": false
 //        }
 
-        Imgproc.rectangle(temp, resultWindowRect.tl(), resultWindowRect.br(), new Scalar(155), 5);
-        Imgproc.line(temp,new Point(1650,577), new Point(1950,577),new Scalar(72,255,0),5);
-        Imgproc.putText(temp, "" + count, resultWindowRect.tl(), Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(155),1);
+//        Imgproc.rectangle(temp, resultWindowRect.tl(), resultWindowRect.br(), new Scalar(155), 5);
+//        Imgproc.line(temp,new Point(1650,577), new Point(1950,577),new Scalar(72,255,0),5);
+//        Imgproc.putText(temp, "" + count, resultWindowRect.tl(), Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(155),1);
+//
+//        Bitmap resultWindowBitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
+//        Utils.matToBitmap(temp, resultWindowBitmap);
 
-        Bitmap resultWindowBitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(temp, resultWindowBitmap);
+        if (resultWindowRect.width == 0 || resultWindowRect.height == 0)
+            return new Mat();
+
+        Log.d(TAG, String.format("result rect: %d, %d, %d, %d, %d", resultWindowRect.x, resultWindowRect.y, resultWindowRect.width, resultWindowRect.height, offset));
+        // Resize the window so it's the same size as in the template
+        correctedMat = new Mat(correctedMat, resultWindowRect);
+        if (correctedMat.width() > 0 && correctedMat.height() > 0)
+            resize(correctedMat, correctedMat,
+                    new Size(mRDT.resultWindowRect.width, mRDT.resultWindowRect.height));
+        return correctedMat;
+    }
+
+    private Mat cropResultWindow(Mat inputMat, MatOfPoint2f boundary, int offset, Mat correctedMat) {
+//        long startTime = System.currentTimeMillis();
+//
+//        Log.d("correctPerspective", "" + (System.currentTimeMillis() - startTime));
+        if(temp.cols() == 0 || temp.rows() == 0)
+            correctedMat.assignTo(temp);
+
+        // If fiducials are specified, use them to improve the estimate of the
+        // result window's location, otherwise use the default rectangle specified by the user
+        Rect resultWindowRect = mRDT.hasFiducial ?
+                cropResultWindowWithFiducial(correctedMat, offset) :
+                new Rect(mRDT.resultWindowRect.x + offset, mRDT.resultWindowRect.y, mRDT.resultWindowRect.width, mRDT.resultWindowRect.height);
+
+//        "RESULT_WINDOW_TOP_LEFT": [1622, 527],
+//        "RESULT_WINDOW_BOTTOM_RIGHT": [2122, 627],
+
+//        "covid19-ghl": {
+//            "REF_IMG": "covid19_ghl_ref_v4",
+//                    "VIEW_FINDER_SCALE": 0.6,
+//                    "RESULT_WINDOW_TOP_LEFT": [1572, 527],
+//            "RESULT_WINDOW_BOTTOM_RIGHT": [2022, 627],
+//            "TOP_LINE_POSITION": [1650,577],
+//            "MIDDLE_LINE_POSITION": [1950,577],
+//            "TOP_LINE_NAME": "Control",
+//                    "MIDDLE_LINE_NAME": "Test",
+//                    "LINE_INTENSITY": 85,
+//                    "CHECK_GLARE": false
+//        }
+
+//        Imgproc.rectangle(temp, resultWindowRect.tl(), resultWindowRect.br(), new Scalar(155), 5);
+//        Imgproc.line(temp,new Point(1650,577), new Point(1950,577),new Scalar(72,255,0),5);
+//        Imgproc.putText(temp, "" + count, resultWindowRect.tl(), Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(155),1);
+//
+//        Bitmap resultWindowBitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
+//        Utils.matToBitmap(temp, resultWindowBitmap);
 
         if (resultWindowRect.width == 0 || resultWindowRect.height == 0)
             return new Mat();
@@ -1056,10 +1106,11 @@ public class ImageProcessor {
         }
 
         int cnt = 0;
+        Mat correctedMat = correctPerspective(inputMat, boundary);
         do {
             count++;
             // Crop the result window
-            resultWindowMat = cropResultWindow(inputMat, boundary, offset);
+            resultWindowMat = cropResultWindow(inputMat, boundary, offset, correctedMat);
             // Skip if there is no window to interpret
             if (resultWindowMat.width() == 0 && resultWindowMat.height() == 0)
                 return new RDTInterpretationResult(resultWindowMat,
