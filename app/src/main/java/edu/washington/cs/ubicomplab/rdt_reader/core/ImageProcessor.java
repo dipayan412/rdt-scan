@@ -37,6 +37,7 @@ import org.opencv.core.Rect;
 import org.opencv.core.RotatedRect;
 import org.opencv.core.Size;
 import org.opencv.core.TermCriteria;
+import org.opencv.features2d.Features2d;
 import org.opencv.imgproc.CLAHE;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.core.Scalar;
@@ -337,6 +338,19 @@ public class ImageProcessor {
 
         // If enough matches are found, calculate homography
         if (goodMatches.size() > GOOD_MATCH_COUNT) {
+            if(scale < 0.5) {
+                Mat keypointMat = new Mat();
+//            Features2d.drawMatches2(scaledMat, inKeypoints, mRDT.refImg, mRDT.refKeypoints, goodMatches_1, keypointMat);
+                Features2d.drawMatchesKnn(scaledMat, inKeypoints, mRDT.refImg, mRDT.refKeypoints, goodMatches, keypointMat);
+                Bitmap featureMappingBitmap = Bitmap.createBitmap(keypointMat.width(), keypointMat.height(), Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(keypointMat, featureMappingBitmap);
+
+                Mat refKeypointMat = new Mat();
+                Features2d.drawKeypoints(mRDT.refImg, mRDT.refKeypoints, refKeypointMat);
+                Bitmap refImageKeypointBitmap = Bitmap.createBitmap(refKeypointMat.width(), refKeypointMat.height(), Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(refKeypointMat, refImageKeypointBitmap);
+            }
+
             // Extract features from reference and scene and put them into proper structure
             List<KeyPoint> keypointsList1 = mRDT.refKeypoints.toList();
             List<KeyPoint> keypointsList2 = inKeypoints.toList();
