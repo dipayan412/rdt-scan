@@ -227,7 +227,7 @@ public final class ImageUtil {
 //        Log.d(TAG,"array "+ Arrays.toString(arr));
 
         // apply sg smoothing here
-        arr = SavGolFilter.applySGfilter(arr);
+//        arr = SavGolFilter.applySGfilter(arr);
 
         // Initialize peak tracking variables
         double min_val = arr[0];

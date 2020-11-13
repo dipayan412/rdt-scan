@@ -62,9 +62,9 @@ public class SavGolFilter {
     }
 
     @RequiresApi(api = Build.VERSION_CODES.N)
-    public static double[] applySGfilter(double[] signal) {
+    public static double[] applySGfilter(double[] signal,int sideN, int polyorder) {
         if (coefficients == null) {
-            coefficients=calculateSGCoefficients(5,2);
+            coefficients=calculateSGCoefficients(sideN,polyorder);
         }
 
         int len=coefficients.length;

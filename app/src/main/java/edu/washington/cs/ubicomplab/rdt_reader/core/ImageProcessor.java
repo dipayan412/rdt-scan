@@ -46,6 +46,7 @@ import java.util.List;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
 import edu.washington.cs.ubicomplab.rdt_reader.utils.ImageUtil;
+import edu.washington.cs.ubicomplab.rdt_reader.utils.SavGolFilter;
 
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.*;
 import static java.lang.Math.pow;
@@ -1072,6 +1073,8 @@ public class ImageProcessor {
             }
 
             // Detect the peaks
+            avgIntensities = SavGolFilter.applySGfilter(avgIntensities,5,2);
+            avgRedIntensities = SavGolFilter.applySGfilter(avgRedIntensities,5,2);
 
             peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
             Redpeaks = ImageUtil.detectPeaks(avgRedIntensities, mRDT.lineIntensity, false);
