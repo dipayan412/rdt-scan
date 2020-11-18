@@ -10,6 +10,8 @@ package edu.washington.cs.ubicomplab.rdt_reader.core;
 
 import android.app.Activity;
 import android.content.Context;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -44,6 +46,7 @@ import java.util.List;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
 import edu.washington.cs.ubicomplab.rdt_reader.utils.ImageUtil;
+import edu.washington.cs.ubicomplab.rdt_reader.utils.SavGolFilter;
 
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.*;
 import static java.lang.Math.pow;
@@ -965,6 +968,7 @@ public class ImageProcessor {
      * @param boundary: the corners of the bounding box around the detected RDT
      * @return an {@link RDTInterpretationResult} indicating the test results
      */
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public RDTInterpretationResult interpretRDT(Mat inputMat, MatOfPoint2f boundary) {
         Mat resultWindowMat;
         Mat unEnhancedResultWindow = new Mat();
@@ -1070,6 +1074,9 @@ public class ImageProcessor {
             }
 
             // Detect the peaks
+            avgIntensities = SavGolFilter.applySGfilter(avgIntensities,5,2);
+            avgRedIntensities = SavGolFilter.applySGfilter(avgRedIntensities,5,2);
+
             peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
             Redpeaks = ImageUtil.detectPeaks(avgRedIntensities, mRDT.lineIntensity, false);
 
