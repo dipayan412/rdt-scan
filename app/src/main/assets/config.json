@@ -119,7 +119,7 @@
     "MIDDLE_LINE_POSITION": [403,100],
     "TOP_LINE_NAME": "Control",
     "MIDDLE_LINE_NAME": "Test",
-    "LINE_INTENSITY": 85,
+    "LINE_INTENSITY": 2,
     "CHECK_GLARE": false
   }
 }
