@@ -1030,8 +1030,8 @@ public class ImageProcessor {
 
             resultWindowMat.copyTo(unEnhancedResultWindow);
             // Enhance the result window if there is something worth enhancing in the first place
-            if (sigma.get(0, 0)[0] > RESULT_WINDOW_ENHANCE_THRESHOLD)
-                resultWindowMat = enhanceResultWindow(resultWindowMat);
+//            if (sigma.get(0, 0)[0] > RESULT_WINDOW_ENHANCE_THRESHOLD)
+//                resultWindowMat = enhanceResultWindow(resultWindowMat);
 
             // Detect the lines in the result window
             // Convert the image to HLS Experimented with using the original BGR2HLS vs the following two step conversion.
