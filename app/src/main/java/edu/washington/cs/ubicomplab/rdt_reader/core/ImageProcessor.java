@@ -50,6 +50,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
@@ -122,12 +123,14 @@ public class ImageProcessor {
      * @param activity: the activity that is using this code
      * @param rdtName: the name of the target RDT
      */
+    Context context;
     public ImageProcessor(Activity activity, String rdtName) {
         // Start timer to track how long it takes to load the reference RDT (debug purposes only)
         long startTime = System.currentTimeMillis();
 
         // Loads the metadata related to the target RDT
         mRDT = new RDT(activity.getApplicationContext(), rdtName);
+        context = activity.getApplicationContext();
 
 //        MatOfKeyPoint matOfKeyPoint = mRDT.refKeypoints;
 //        float[] data = new float[(int) matOfKeyPoint.total() * matOfKeyPoint.channels()];
@@ -288,6 +291,14 @@ public class ImageProcessor {
         Mat scaledMat = new Mat();
         Imgproc.resize(inputMat, scaledMat, new Size(), scale, scale, Imgproc.INTER_LINEAR);
 
+//        if(scale < 0.5) {
+////            Mat temp = new Mat(mRDT.refImg, new Rect(0, 50, mRDT.refImg.width(), mRDT.refImg.height()));
+//            Mat temp = new Mat(mRDT.refImg, new Rect(100, 0, mRDT.refImg.width() - 200, mRDT.refImg.height()));
+//            Bitmap bitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
+//            Utils.matToBitmap(temp, bitmap);
+//            Log.d("HELLO", "HELLO");
+//        }
+
         // Create mask for region of interest
         Mat mask = new Mat(scaledMat.cols(), scaledMat.rows(), CV_8U, new Scalar(0));
         Point p1 = new Point(0, scaledMat.size().height*(1-mRDT.viewFinderScaleW/CROP_RATIO)/2);
@@ -301,6 +312,19 @@ public class ImageProcessor {
         long startTime = System.currentTimeMillis();
         mRDT.detector.detectAndCompute(scaledMat, mask, inKeypoints, inDescriptor);
         Log.d("detectAndCompute", "" + (System.currentTimeMillis() - startTime));
+
+//        if(scale < 0.5) {
+//            ArrayList<KeyPoint> goodkpsList= new ArrayList<KeyPoint> (inKeypoints.toList());
+//            MatOfKeyPoint goodkpMat = new MatOfKeyPoint();
+//            Iterator<KeyPoint> iter=goodkpsList.listIterator();
+//            while (iter.hasNext()){
+//                KeyPoint kp = iter.next();
+//                if(kp.response < 0.04)
+//                    iter.remove();
+//            }
+//            goodkpMat.fromList(goodkpsList);
+//            mRDT.detector.compute(scaledMat, goodkpMat, inDescriptor);
+//        }
 
         // Skip if no features are found
         if (mRDT.refDescriptor.size().equals(new Size(0,0))) {
@@ -317,21 +341,24 @@ public class ImageProcessor {
         startTime = System.currentTimeMillis();
         mRDT.matcher.knnMatch(mRDT.refDescriptor, inDescriptor, matches,
                 2, new Mat(), false);
-        Log.d("knnMatch", "" + (System.currentTimeMillis() - startTime));
+//        Log.d("knnMatch", "" + (System.currentTimeMillis() - startTime));
 
         // Identify good matches based on nearest neighbor distance ratio test
         ArrayList<DMatch> goodMatches = new ArrayList<>();
+        ArrayList<MatOfDMatch> goodMatches_1 = new ArrayList<>();
         startTime = System.currentTimeMillis();
         for (int i = 0; i < matches.size(); i++) {
             DMatch[] dMatches = matches.get(i).toArray();
             if (dMatches.length >= 2) {
                 DMatch m = dMatches[0];
                 DMatch n = dMatches[1];
-                if (m.distance <= 0.80 * n.distance)
+                if (m.distance <= 0.8 * n.distance) {
                     goodMatches.add(m);
+                    goodMatches_1.add(matches.get(i));
+                }
             }
         }
-        Log.d("goodMatchCount", "" + (System.currentTimeMillis() - startTime));
+//        Log.d("goodMatchCount", "" + (System.currentTimeMillis() - startTime));
         Log.d("ImageProcessor","Number of Good Matches "+Integer.toString(goodMatches.size()));
         MatOfDMatch goodMatchesMat = new MatOfDMatch();
         goodMatchesMat.fromList(goodMatches);
@@ -341,7 +368,8 @@ public class ImageProcessor {
             if(scale < 0.5) {
                 Mat keypointMat = new Mat();
 //            Features2d.drawMatches2(scaledMat, inKeypoints, mRDT.refImg, mRDT.refKeypoints, goodMatches_1, keypointMat);
-                Features2d.drawMatchesKnn(scaledMat, inKeypoints, mRDT.refImg, mRDT.refKeypoints, goodMatches, keypointMat);
+//                Features2d.drawMatchesKnn(scaledMat, inKeypoints, mRDT.refImg, mRDT.refKeypoints, goodMatches_1, keypointMat);
+                Features2d.drawMatchesKnn(mRDT.refImg, mRDT.refKeypoints,scaledMat, inKeypoints, goodMatches_1, keypointMat);
                 Bitmap featureMappingBitmap = Bitmap.createBitmap(keypointMat.width(), keypointMat.height(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(keypointMat, featureMappingBitmap);
 
@@ -349,6 +377,35 @@ public class ImageProcessor {
                 Features2d.drawKeypoints(mRDT.refImg, mRDT.refKeypoints, refKeypointMat);
                 Bitmap refImageKeypointBitmap = Bitmap.createBitmap(refKeypointMat.width(), refKeypointMat.height(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(refKeypointMat, refImageKeypointBitmap);
+
+//                try {
+//                    File file = new File(Environment.getExternalStorageDirectory() + File.separator + "ref.png");
+//                    FileOutputStream fOut = new FileOutputStream(file);
+//                    Bitmap bitmap = Bitmap.createBitmap(mRDT.refImg.width(), mRDT.refImg.height(), Bitmap.Config.ARGB_8888);
+//                    Utils.matToBitmap(mRDT.refImg, bitmap);
+//                    bitmap.compress(Bitmap.CompressFormat.PNG, 85, fOut);
+//                    fOut.flush();
+//                    fOut.close();
+//                    bitmap.recycle();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+//
+//                try {
+//                    File file = new File(Environment.getExternalStorageDirectory() + File.separator + "scaled.png");
+//                    FileOutputStream fOut = new FileOutputStream(file);
+//                    Bitmap bitmap = Bitmap.createBitmap(scaledMat.width(), scaledMat.height(), Bitmap.Config.ARGB_8888);
+//                    Utils.matToBitmap(scaledMat, bitmap);
+//                    bitmap.compress(Bitmap.CompressFormat.PNG, 85, fOut);
+//                    fOut.flush();
+//                    fOut.close();
+//                    bitmap.recycle();
+//                } catch (Exception e) {
+//                    e.printStackTrace();
+//                }
+
+
+                Log.d("HELLO", "HELLO");
             }
 
             // Extract features from reference and scene and put them into proper structure
