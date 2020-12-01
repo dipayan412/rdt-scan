@@ -45,6 +45,10 @@ public class RDT {
     public ArrayList<double[]> topLineHueRange, middleLineHueRange, bottomLineHueRange;
     public int numberOfLines;
 
+    //peak detector parameters
+    public double threshold;
+    public int minDistance;
+
     // Fiducial variables
     public double distanctFromFiducialToResultWindow;
     public Rect resultWindowRect;
@@ -127,6 +131,10 @@ public class RDT {
             }
 
             checkGlare = obj.has("CHECK_GLARE") ? obj.getBoolean("CHECK_GLARE") : false;
+
+            // READ PEAK DETECTION PARAMETERS
+            threshold=obj.has("THRESHOLD")?obj.getDouble("THRESHOLD"):2.5;
+            minDistance=obj.has("MIN_DISTANCE")?obj.getInt("MIN_DISTANCE"):40;
 
             // Pull data related to fiducials
             fiducials = obj.has("FIDUCIALS") ? obj.getJSONArray("FIDUCIALS") : new JSONArray();
