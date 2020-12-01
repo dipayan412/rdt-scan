@@ -368,7 +368,7 @@ public class findPeaks {
             }
         }
 
-        if (peaks.size() > 1 && min_dist > 1) {
+        if (peaks.size() >= 1 && min_dist > 1) {
             ArrayList<Integer> sortedList = new ArrayList<>(peaks);
             Integer[] highest = IntStream.range(0, peaks.size()).boxed().sorted((i, j) -> Double.
                     compare(yatPeaks.get(i), yatPeaks.get(j))).map(i -> peaks.get(i)).toArray(x -> new Integer[x]);
