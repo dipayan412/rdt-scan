@@ -11,8 +11,10 @@ package edu.washington.cs.ubicomplab.rdt_reader.core;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.os.Build;
 import android.os.Environment;
 import android.provider.Settings;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -55,6 +57,7 @@ import java.util.List;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
 import edu.washington.cs.ubicomplab.rdt_reader.utils.ImageUtil;
+import edu.washington.cs.ubicomplab.rdt_reader.utils.SavGolFilter;
 
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.*;
 import static java.lang.Math.pow;
@@ -1137,14 +1140,16 @@ public class ImageProcessor {
         return enhancedMat;
     }
 
+    Mat temp = new Mat();
+    int count = 0;
+
     /**
      * Interprets any lines that appear within the detected RDT's result window
      * @param inputMat: the candidate video frame
      * @param boundary: the corners of the bounding box around the detected RDT
      * @return an {@link RDTInterpretationResult} indicating the test results
      */
-    Mat temp = new Mat();
-    int count = 0;
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public RDTInterpretationResult interpretRDT(Mat inputMat, MatOfPoint2f boundary) {
         Mat resultWindowMat;
         Mat unEnhancedResultWindow = new Mat();
@@ -1177,11 +1182,9 @@ public class ImageProcessor {
         }
 
         int cnt = 0;
-        Mat correctedMat = correctPerspective(inputMat, boundary);
         do {
-            count++;
             // Crop the result window
-            resultWindowMat = cropResultWindow(inputMat, boundary, offset, correctedMat);
+            resultWindowMat = cropResultWindow(inputMat, boundary, offset);
             // Skip if there is no window to interpret
             if (resultWindowMat.width() == 0 && resultWindowMat.height() == 0)
                 return new RDTInterpretationResult(resultWindowMat,
@@ -1208,8 +1211,8 @@ public class ImageProcessor {
 
             resultWindowMat.copyTo(unEnhancedResultWindow);
             // Enhance the result window if there is something worth enhancing in the first place
-            if (sigma.get(0, 0)[0] > RESULT_WINDOW_ENHANCE_THRESHOLD)
-                resultWindowMat = enhanceResultWindow(resultWindowMat);
+//            if (sigma.get(0, 0)[0] > RESULT_WINDOW_ENHANCE_THRESHOLD)
+//                resultWindowMat = enhanceResultWindow(resultWindowMat);
 
             // Detect the lines in the result window
             // Convert the image to HLS Experimented with using the original BGR2HLS vs the following two step conversion.
@@ -1252,6 +1255,9 @@ public class ImageProcessor {
             }
 
             // Detect the peaks
+            avgIntensities = SavGolFilter.applySGfilter(avgIntensities,5,2);
+            avgRedIntensities = SavGolFilter.applySGfilter(avgRedIntensities,5,2);
+
             peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
             Redpeaks = ImageUtil.detectPeaks(avgRedIntensities, mRDT.lineIntensity, false);
 
@@ -1381,9 +1387,6 @@ public class ImageProcessor {
 
             cnt++;
         } while (!tuned && cnt < 10);
-
-        Bitmap resultWindowBitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(temp, resultWindowBitmap);
 
         return new RDTInterpretationResult(unEnhancedResultWindow,
                 topLine, middleLine, bottomLine,
