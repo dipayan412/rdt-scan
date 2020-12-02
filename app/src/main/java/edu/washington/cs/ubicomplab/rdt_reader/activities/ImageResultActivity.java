@@ -9,7 +9,7 @@
 package edu.washington.cs.ubicomplab.rdt_reader.activities;
 
 import android.app.AlertDialog;
-//import android.arch.persistence.room.Room;
+import android.arch.persistence.room.Room;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -47,10 +47,7 @@ import org.opencv.imgproc.Imgproc;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.lang.reflect.Array;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -58,13 +55,11 @@ import java.util.Date;
 import java.util.Locale;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
-import edu.washington.cs.ubicomplab.rdt_reader.core.RDTCaptureResult;
 import edu.washington.cs.ubicomplab.rdt_reader.db.DatabaseClient;
 import edu.washington.cs.ubicomplab.rdt_reader.fragments.SettingsDialogFragment;
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.SettingsDialogListener;
 import edu.washington.cs.ubicomplab.rdt_reader.core.Constants;
 import edu.washington.cs.ubicomplab.rdt_reader.model.SampleID;
-import edu.washington.cs.ubicomplab.rdt_reader.utils.AppSingleton;
 
 import static java.text.DateFormat.getDateTimeInstance;
 
@@ -77,14 +72,12 @@ import static java.text.DateFormat.getDateTimeInstance;
 public class ImageResultActivity extends AppCompatActivity implements View.OnClickListener, SettingsDialogListener {
     // Image saving variables
     Bitmap mBitmapToSave;
-    byte[] capturedByteArray, windowByteArray,hiresByteArray;
+    byte[] capturedByteArray, windowByteArray;
     boolean isImageSaved = false;
     Bitmap resultimageBitMap;
     Bitmap windowimageBitMap;
     Bitmap originalWindowBitmap;
     String resultString;
-    Bitmap hiresBitMap;
-
 
     // Capture time variable
     long timeTaken = 0;
@@ -101,25 +94,12 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_image_result);
 
-        // pull in high resolution image from internal file
-        try{
-            FileInputStream hiresFile=this.openFileInput("hires");
-            hiresBitMap=BitmapFactory.decodeStream(hiresFile);
-            hiresFile.close();
-            //delete this to make sure file changes on next capture
-            deleteFile("hires");
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            hiresBitMap = BitmapFactory.decodeResource(getResources(), R.mipmap.defaultbitmap);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         // Initialize UI elements
         initViews();
     }
 
     //  size = 3
+
     /**
      * Initializes UI elements based on that data that was passed through the intent
      */
@@ -143,45 +123,45 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         // Captured image
         ImageView resultImageView = findViewById(R.id.RDTImageView);
         if (intent.hasExtra("captured")) {
-//            capturedByteArray = intent.getExtras().getByteArray("captured");
-//            mBitmapToSave = BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
+            capturedByteArray = intent.getExtras().getByteArray("captured");
+            mBitmapToSave = BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
 
 
-            resultimageBitMap=BitmapFactory.decodeByteArray(AppSingleton.getInstance().getCapturedImageData(), 0, AppSingleton.getInstance().getCapturedImageData().length);
+            resultimageBitMap=BitmapFactory.decodeByteArray(capturedByteArray, 0, capturedByteArray.length);
             resultImageView.setImageBitmap(resultimageBitMap);
         }
 
         // Enhanced image
         if (intent.hasExtra("window")) {
-//            windowByteArray = intent.getExtras().getByteArray("window");
-//            mBitmapToSave = BitmapFactory.decodeByteArray(windowByteArray, 0, windowByteArray.length);
+            windowByteArray = intent.getExtras().getByteArray("window");
+            mBitmapToSave = BitmapFactory.decodeByteArray(windowByteArray, 0, windowByteArray.length);
             ImageView windowImageView = findViewById(R.id.WindowImageView);
 
-            originalWindowBitmap = BitmapFactory.decodeByteArray(AppSingleton.getInstance().getResultWindowData(), 0, AppSingleton.getInstance().getResultWindowData().length);
+            originalWindowBitmap = BitmapFactory.decodeByteArray(windowByteArray,0,windowByteArray.length);
 
-            if(peaks.size() > 0) {
+            if(redPeaks.size() > 0) {
 
                 Mat windowMat = new Mat();
                 Utils.bitmapToMat(originalWindowBitmap, windowMat);//Imgcodecs.imdecode(new MatOfByte(windowByteArray), Imgcodecs.CV_LOAD_IMAGE_ANYCOLOR);
 //                Imgproc.cvtColor(windowMat,windowMat,Imgproc.COLOR_BGR2RGB);
 //                Bitmap temp = Bitmap.createBitmap(windowMat.cols(), windowMat.rows(), Bitmap.Config.ARGB_8888);
 //                Utils.matToBitmap(windowMat, temp);
-                if(peaks.get(0) != null) {
-                    Point pt1_control = new Point(peaks.get(0)[0], 0);
-                    Point pt2_control = new Point(peaks.get(0)[0], 4);
+                if(redPeaks.get(0) != null) {
+                    Point pt1_control = new Point(redPeaks.get(0)[0], 0);
+                    Point pt2_control = new Point(redPeaks.get(0)[0], 4);
 //                    Imgproc.line(windowMat, pt1_control, pt2_control, new Scalar(255, 166, 0), 1);
                     Imgproc.line(windowMat, pt1_control, pt2_control, new Scalar(0, 0, 255), 1);
                 }
-                if(peaks.size() > 1) {
-                    Point pt1_test=new Point(peaks.get(1)[0],0);
-                    Point pt2_test=new Point(peaks.get(1)[0],4);
+                if(redPeaks.size() > 1) {
+                    Point pt1_test=new Point(redPeaks.get(1)[0],0);
+                    Point pt2_test=new Point(redPeaks.get(1)[0],4);
                     Imgproc.line(windowMat,pt1_test,pt2_test,new Scalar(72,255,0),1);
                 }
                 Bitmap windowBitmap = Bitmap.createBitmap(windowMat.cols(), windowMat.rows(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(windowMat, windowBitmap);
                 windowimageBitMap = windowBitmap;
             } else {
-                windowimageBitMap=BitmapFactory.decodeByteArray(AppSingleton.getInstance().getResultWindowData(),0,AppSingleton.getInstance().getResultWindowData().length);
+                windowimageBitMap=BitmapFactory.decodeByteArray(windowByteArray,0,windowByteArray.length);
             }
             Matrix matrix = new Matrix();
             matrix.postRotate(90);
@@ -212,7 +192,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             boolean topLine = intent.getBooleanExtra("topLine", false);
             TextView topLineTextView = findViewById(R.id.topLineTextView);
             topLineTextView.setTextColor(Color.rgb(0, 0, 255));
-            topLineTextView.setText(peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f",(peaks.get(0)[3])) : "no control line");
+            topLineTextView.setText(redPeaks.size() > 0 && redPeaks.get(0) != null ? String.format("%.1f",(redPeaks.get(0)[3])) : "no control line");
             //topLineTextView.setText(String.format("%s", topLine ? "True" : "False"));
         }
         if (intent.hasExtra("topLineName")) {
@@ -226,7 +206,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("middleLine")) {
             boolean middleLine = intent.getBooleanExtra("middleLine", false);
             TextView middleLineTextView = findViewById(R.id.middleLineTextView);
-            middleLineTextView.setText(peaks.size() > 1 ? String.format("%.1f",(peaks.get(1)[3])) : "no test line");
+            middleLineTextView.setText(redPeaks.size() > 1 ? String.format("%.1f",(redPeaks.get(1)[3])) : "no test line");
             middleLineTextView.setTextColor(Color.rgb(51,153,0));
             //middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
         }
@@ -236,6 +216,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             middleLineNameTextView.setTextColor(Color.rgb(51,153,0));
             middleLineNameTextView.setText(middleLineName);
         }
+
         // Bottom line
         if (numberOfLines > 2 && intent.hasExtra("bottomLine")) {
             boolean bottomLine = intent.getBooleanExtra("bottomLine", false);
@@ -260,7 +241,6 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
                 warningView.setText("");
             }
         }
-
 
         // Buttons
         Button saveImageButton = findViewById(R.id.saveButton);
@@ -333,8 +313,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         }
     }
     /*
-    * refactored function to save imagefile
-    * @param sampleID the sampleID user typed in
+     * refactored function to save imagefile
+     * @param sampleID the sampleID user typed in
      */
     public void saveImageFile(String sampleID) {
 
@@ -352,8 +332,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss-SSS");
 
 
-                ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
-                originalWindowBitmap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
+        ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
+        originalWindowBitmap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
 
         // Save both the full image and the enhanced image
         try {
@@ -362,7 +342,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             String filePath = sdIconStorageDir.toString() +
                     String.format("/%s-%s_full.jpg",sampleID, sdf.format(new Date()));
             FileOutputStream fileOutputStream = new FileOutputStream(filePath);
-            fileOutputStream.write(AppSingleton.getInstance().getCapturedImageData());
+            fileOutputStream.write(capturedByteArray);
             fileOutputStream.flush();
             fileOutputStream.close();
 
@@ -380,19 +360,6 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             //fileOutputStream.write(windowByteArray);
             fileOutputStream.flush();
             fileOutputStream.close();
-
-            //Save highres image
-            String filePathhires = sdIconStorageDir.toString() +
-                    String.format("/%s-%s_hires.jpg", sampleID,sdf.format(new Date()));
-            ByteArrayOutputStream hiresimagestream=new ByteArrayOutputStream();
-            hiresBitMap.compress(Bitmap.CompressFormat.JPEG,100,hiresimagestream);
-            fileOutputStream = new FileOutputStream(filePathhires);
-            fileOutputStream.write(hiresimagestream.toByteArray());
-            //fileOutputStream.write(windowByteArray);
-            fileOutputStream.flush();
-            fileOutputStream.close();
-
-
 
             ExifInterface windowExif=new ExifInterface(filePath);
 
