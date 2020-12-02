@@ -1388,6 +1388,8 @@ public class ImageProcessor {
             cnt++;
         } while (!tuned && cnt < 10);
 
+
+        temp.release();
         return new RDTInterpretationResult(unEnhancedResultWindow,
                 topLine, middleLine, bottomLine,
                 mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, hasTooMuchBlood, mRDT.numberOfLines, peaks,Redpeaks, avgIntensities);
