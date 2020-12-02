@@ -313,8 +313,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         }
     }
     /*
-    * refactored function to save imagefile
-    * @param sampleID the sampleID user typed in
+     * refactored function to save imagefile
+     * @param sampleID the sampleID user typed in
      */
     public void saveImageFile(String sampleID) {
 
@@ -332,8 +332,8 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH-mm-ss-SSS");
 
 
-                ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
-                originalWindowBitmap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
+        ByteArrayOutputStream windowimagestream=new ByteArrayOutputStream();
+        originalWindowBitmap.compress(Bitmap.CompressFormat.JPEG,100,windowimagestream);
 
         // Save both the full image and the enhanced image
         try {
