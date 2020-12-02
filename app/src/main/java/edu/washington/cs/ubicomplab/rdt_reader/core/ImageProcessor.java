@@ -10,15 +10,13 @@ package edu.washington.cs.ubicomplab.rdt_reader.core;
 
 import android.app.Activity;
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.os.Environment;
-import android.provider.Settings;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Log;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
 import org.opencv.calib3d.Calib3d;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
@@ -37,24 +35,18 @@ import org.opencv.core.Rect;
 import org.opencv.core.RotatedRect;
 import org.opencv.core.Size;
 import org.opencv.core.TermCriteria;
-import org.opencv.features2d.Features2d;
 import org.opencv.imgproc.CLAHE;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.core.Scalar;
 
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
 import edu.washington.cs.ubicomplab.rdt_reader.utils.ImageUtil;
+import edu.washington.cs.ubicomplab.rdt_reader.utils.SavGolFilter;
 
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.*;
 import static java.lang.Math.pow;
@@ -123,27 +115,12 @@ public class ImageProcessor {
      * @param activity: the activity that is using this code
      * @param rdtName: the name of the target RDT
      */
-    Context context;
     public ImageProcessor(Activity activity, String rdtName) {
         // Start timer to track how long it takes to load the reference RDT (debug purposes only)
         long startTime = System.currentTimeMillis();
 
         // Loads the metadata related to the target RDT
         mRDT = new RDT(activity.getApplicationContext(), rdtName);
-        context = activity.getApplicationContext();
-
-//        MatOfKeyPoint matOfKeyPoint = mRDT.refKeypoints;
-//        float[] data = new float[(int) matOfKeyPoint.total() * matOfKeyPoint.channels()];
-//        matOfKeyPoint.get(0, 0, data);
-//        try {
-//            ByteArrayOutputStream bos = new ByteArrayOutputStream();
-//            ObjectOutput out = new ObjectOutputStream(bos);
-//            out.writeObject(data);
-//            out.close();
-//            byte[] buf = bos.toByteArray();
-//        } catch(Exception e) {
-//            e.printStackTrace();
-//        }
 
         // Calculates a baseline expected sharpness level for the target RDT
         // TODO: smarter place to put this?
@@ -190,8 +167,6 @@ public class ImageProcessor {
         }
     }
 
-
-
     /**
      * Returns the rectangle corresponding to the viewfinder that the user sees
      * (i.e., region-of-interest) for image quality
@@ -227,9 +202,8 @@ public class ImageProcessor {
 
         // If the frame passes those two checks, continue to try to detect the RDT
         if (passed) {
-
             // Locate the RDT design within the camera frame
-            MatOfPoint2f boundary = detectRDT(grayMat, 0.5);
+            MatOfPoint2f boundary = detectRDT(grayMat);
             grayMat.release();
 
             // Check the placement, size, and orientation of the RDT,
@@ -283,21 +257,13 @@ public class ImageProcessor {
      * @return the corners of the bounding box around the detected RDT if it is present,
      * otherwise a blank MatOfPoint2f
      */
-    public MatOfPoint2f detectRDT(Mat inputMat, double scale) {
+    private MatOfPoint2f detectRDT(Mat inputMat) {
         double currentTime = System.currentTimeMillis();
 
         // Resize inputMat for quicker computation
-//        double scale = 0.1;//SIFT_RESIZE_FACTOR;
+        double scale = SIFT_RESIZE_FACTOR;
         Mat scaledMat = new Mat();
         Imgproc.resize(inputMat, scaledMat, new Size(), scale, scale, Imgproc.INTER_LINEAR);
-
-//        if(scale < 0.5) {
-////            Mat temp = new Mat(mRDT.refImg, new Rect(0, 50, mRDT.refImg.width(), mRDT.refImg.height()));
-//            Mat temp = new Mat(mRDT.refImg, new Rect(100, 0, mRDT.refImg.width() - 200, mRDT.refImg.height()));
-//            Bitmap bitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
-//            Utils.matToBitmap(temp, bitmap);
-//            Log.d("HELLO", "HELLO");
-//        }
 
         // Create mask for region of interest
         Mat mask = new Mat(scaledMat.cols(), scaledMat.rows(), CV_8U, new Scalar(0));
@@ -309,22 +275,7 @@ public class ImageProcessor {
         Mat inDescriptor = new Mat();
         MatOfKeyPoint inKeypoints = new MatOfKeyPoint();
         MatOfPoint2f boundary = new MatOfPoint2f();
-        long startTime = System.currentTimeMillis();
         mRDT.detector.detectAndCompute(scaledMat, mask, inKeypoints, inDescriptor);
-        Log.d("detectAndCompute", "" + (System.currentTimeMillis() - startTime));
-
-//        if(scale < 0.5) {
-//            ArrayList<KeyPoint> goodkpsList= new ArrayList<KeyPoint> (inKeypoints.toList());
-//            MatOfKeyPoint goodkpMat = new MatOfKeyPoint();
-//            Iterator<KeyPoint> iter=goodkpsList.listIterator();
-//            while (iter.hasNext()){
-//                KeyPoint kp = iter.next();
-//                if(kp.response < 0.04)
-//                    iter.remove();
-//            }
-//            goodkpMat.fromList(goodkpsList);
-//            mRDT.detector.compute(scaledMat, goodkpMat, inDescriptor);
-//        }
 
         // Skip if no features are found
         if (mRDT.refDescriptor.size().equals(new Size(0,0))) {
@@ -338,76 +289,26 @@ public class ImageProcessor {
 
         // Match feature descriptors using KNN
         List<MatOfDMatch> matches = new ArrayList<>();
-        startTime = System.currentTimeMillis();
         mRDT.matcher.knnMatch(mRDT.refDescriptor, inDescriptor, matches,
                 2, new Mat(), false);
-//        Log.d("knnMatch", "" + (System.currentTimeMillis() - startTime));
 
         // Identify good matches based on nearest neighbor distance ratio test
         ArrayList<DMatch> goodMatches = new ArrayList<>();
-        ArrayList<MatOfDMatch> goodMatches_1 = new ArrayList<>();
-        startTime = System.currentTimeMillis();
         for (int i = 0; i < matches.size(); i++) {
             DMatch[] dMatches = matches.get(i).toArray();
             if (dMatches.length >= 2) {
                 DMatch m = dMatches[0];
                 DMatch n = dMatches[1];
-                if (m.distance <= 0.8 * n.distance) {
+                if (m.distance <= 0.80 * n.distance)
                     goodMatches.add(m);
-                    goodMatches_1.add(matches.get(i));
-                }
             }
         }
-//        Log.d("goodMatchCount", "" + (System.currentTimeMillis() - startTime));
         Log.d("ImageProcessor","Number of Good Matches "+Integer.toString(goodMatches.size()));
         MatOfDMatch goodMatchesMat = new MatOfDMatch();
         goodMatchesMat.fromList(goodMatches);
 
         // If enough matches are found, calculate homography
         if (goodMatches.size() > GOOD_MATCH_COUNT) {
-            if(scale < 0.5) {
-                Mat keypointMat = new Mat();
-//            Features2d.drawMatches2(scaledMat, inKeypoints, mRDT.refImg, mRDT.refKeypoints, goodMatches_1, keypointMat);
-//                Features2d.drawMatchesKnn(scaledMat, inKeypoints, mRDT.refImg, mRDT.refKeypoints, goodMatches_1, keypointMat);
-                Features2d.drawMatchesKnn(mRDT.refImg, mRDT.refKeypoints,scaledMat, inKeypoints, goodMatches_1, keypointMat);
-                Bitmap featureMappingBitmap = Bitmap.createBitmap(keypointMat.width(), keypointMat.height(), Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(keypointMat, featureMappingBitmap);
-
-                Mat refKeypointMat = new Mat();
-                Features2d.drawKeypoints(mRDT.refImg, mRDT.refKeypoints, refKeypointMat);
-                Bitmap refImageKeypointBitmap = Bitmap.createBitmap(refKeypointMat.width(), refKeypointMat.height(), Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(refKeypointMat, refImageKeypointBitmap);
-
-//                try {
-//                    File file = new File(Environment.getExternalStorageDirectory() + File.separator + "ref.png");
-//                    FileOutputStream fOut = new FileOutputStream(file);
-//                    Bitmap bitmap = Bitmap.createBitmap(mRDT.refImg.width(), mRDT.refImg.height(), Bitmap.Config.ARGB_8888);
-//                    Utils.matToBitmap(mRDT.refImg, bitmap);
-//                    bitmap.compress(Bitmap.CompressFormat.PNG, 85, fOut);
-//                    fOut.flush();
-//                    fOut.close();
-//                    bitmap.recycle();
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-//
-//                try {
-//                    File file = new File(Environment.getExternalStorageDirectory() + File.separator + "scaled.png");
-//                    FileOutputStream fOut = new FileOutputStream(file);
-//                    Bitmap bitmap = Bitmap.createBitmap(scaledMat.width(), scaledMat.height(), Bitmap.Config.ARGB_8888);
-//                    Utils.matToBitmap(scaledMat, bitmap);
-//                    bitmap.compress(Bitmap.CompressFormat.PNG, 85, fOut);
-//                    fOut.flush();
-//                    fOut.close();
-//                    bitmap.recycle();
-//                } catch (Exception e) {
-//                    e.printStackTrace();
-//                }
-
-
-                Log.d("HELLO", "HELLO");
-            }
-
             // Extract features from reference and scene and put them into proper structure
             List<KeyPoint> keypointsList1 = mRDT.refKeypoints.toList();
             List<KeyPoint> keypointsList2 = inKeypoints.toList();
@@ -440,9 +341,7 @@ public class ImageProcessor {
 
                 // Get the corresponding corners in the scene
                 Mat sceneCorners = new Mat(4, 1, CvType.CV_32FC2);
-                startTime = System.currentTimeMillis();
                 perspectiveTransform(objCorners, sceneCorners, H);
-                Log.d("perspectiveTransform", "" + (System.currentTimeMillis() - startTime));
 
                 // Extract corners for bounding box and put them in a MatOfPoint2f
                 Point tlBoundary = new Point(sceneCorners.get(0, 0)[0]/scale,
@@ -876,88 +775,13 @@ public class ImageProcessor {
      * @return the RDT image tightly cropped and de-skewed around the result window
      */
     private Mat cropResultWindow(Mat inputMat, MatOfPoint2f boundary, int offset) {
-        long startTime = System.currentTimeMillis();
         Mat correctedMat = correctPerspective(inputMat, boundary);
-        Log.d("correctPerspective", "" + (System.currentTimeMillis() - startTime));
-        if(temp.cols() == 0 || temp.rows() == 0)
-            correctedMat.assignTo(temp);
 
         // If fiducials are specified, use them to improve the estimate of the
         // result window's location, otherwise use the default rectangle specified by the user
         Rect resultWindowRect = mRDT.hasFiducial ?
                 cropResultWindowWithFiducial(correctedMat, offset) :
                 new Rect(mRDT.resultWindowRect.x + offset, mRDT.resultWindowRect.y, mRDT.resultWindowRect.width, mRDT.resultWindowRect.height);
-
-//        "RESULT_WINDOW_TOP_LEFT": [1622, 527],
-//        "RESULT_WINDOW_BOTTOM_RIGHT": [2122, 627],
-
-//        "covid19-ghl": {
-//            "REF_IMG": "covid19_ghl_ref_v4",
-//                    "VIEW_FINDER_SCALE": 0.6,
-//                    "RESULT_WINDOW_TOP_LEFT": [1572, 527],
-//            "RESULT_WINDOW_BOTTOM_RIGHT": [2022, 627],
-//            "TOP_LINE_POSITION": [1650,577],
-//            "MIDDLE_LINE_POSITION": [1950,577],
-//            "TOP_LINE_NAME": "Control",
-//                    "MIDDLE_LINE_NAME": "Test",
-//                    "LINE_INTENSITY": 85,
-//                    "CHECK_GLARE": false
-//        }
-
-//        Imgproc.rectangle(temp, resultWindowRect.tl(), resultWindowRect.br(), new Scalar(155), 5);
-//        Imgproc.line(temp,new Point(1650,577), new Point(1950,577),new Scalar(72,255,0),5);
-//        Imgproc.putText(temp, "" + count, resultWindowRect.tl(), Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(155),1);
-//
-//        Bitmap resultWindowBitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
-//        Utils.matToBitmap(temp, resultWindowBitmap);
-
-        if (resultWindowRect.width == 0 || resultWindowRect.height == 0)
-            return new Mat();
-
-        Log.d(TAG, String.format("result rect: %d, %d, %d, %d, %d", resultWindowRect.x, resultWindowRect.y, resultWindowRect.width, resultWindowRect.height, offset));
-        // Resize the window so it's the same size as in the template
-        correctedMat = new Mat(correctedMat, resultWindowRect);
-        if (correctedMat.width() > 0 && correctedMat.height() > 0)
-            resize(correctedMat, correctedMat,
-                    new Size(mRDT.resultWindowRect.width, mRDT.resultWindowRect.height));
-        return correctedMat;
-    }
-
-    private Mat cropResultWindow(Mat inputMat, MatOfPoint2f boundary, int offset, Mat correctedMat) {
-//        long startTime = System.currentTimeMillis();
-//
-//        Log.d("correctPerspective", "" + (System.currentTimeMillis() - startTime));
-        if(temp.cols() == 0 || temp.rows() == 0)
-            correctedMat.assignTo(temp);
-
-        // If fiducials are specified, use them to improve the estimate of the
-        // result window's location, otherwise use the default rectangle specified by the user
-        Rect resultWindowRect = mRDT.hasFiducial ?
-                cropResultWindowWithFiducial(correctedMat, offset) :
-                new Rect(mRDT.resultWindowRect.x + offset, mRDT.resultWindowRect.y, mRDT.resultWindowRect.width, mRDT.resultWindowRect.height);
-
-//        "RESULT_WINDOW_TOP_LEFT": [1622, 527],
-//        "RESULT_WINDOW_BOTTOM_RIGHT": [2122, 627],
-
-//        "covid19-ghl": {
-//            "REF_IMG": "covid19_ghl_ref_v4",
-//                    "VIEW_FINDER_SCALE": 0.6,
-//                    "RESULT_WINDOW_TOP_LEFT": [1572, 527],
-//            "RESULT_WINDOW_BOTTOM_RIGHT": [2022, 627],
-//            "TOP_LINE_POSITION": [1650,577],
-//            "MIDDLE_LINE_POSITION": [1950,577],
-//            "TOP_LINE_NAME": "Control",
-//                    "MIDDLE_LINE_NAME": "Test",
-//                    "LINE_INTENSITY": 85,
-//                    "CHECK_GLARE": false
-//        }
-
-//        Imgproc.rectangle(temp, resultWindowRect.tl(), resultWindowRect.br(), new Scalar(155), 5);
-//        Imgproc.line(temp,new Point(1650,577), new Point(1950,577),new Scalar(72,255,0),5);
-//        Imgproc.putText(temp, "" + count, resultWindowRect.tl(), Core.FONT_HERSHEY_SIMPLEX, 1, new Scalar(155),1);
-//
-//        Bitmap resultWindowBitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
-//        Utils.matToBitmap(temp, resultWindowBitmap);
 
         if (resultWindowRect.width == 0 || resultWindowRect.height == 0)
             return new Mat();
@@ -1143,8 +967,7 @@ public class ImageProcessor {
      * @param boundary: the corners of the bounding box around the detected RDT
      * @return an {@link RDTInterpretationResult} indicating the test results
      */
-    Mat temp = new Mat();
-    int count = 0;
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public RDTInterpretationResult interpretRDT(Mat inputMat, MatOfPoint2f boundary) {
         Mat resultWindowMat;
         Mat unEnhancedResultWindow = new Mat();
@@ -1177,11 +1000,9 @@ public class ImageProcessor {
         }
 
         int cnt = 0;
-        Mat correctedMat = correctPerspective(inputMat, boundary);
         do {
-            count++;
             // Crop the result window
-            resultWindowMat = cropResultWindow(inputMat, boundary, offset, correctedMat);
+            resultWindowMat = cropResultWindow(inputMat, boundary, offset);
             // Skip if there is no window to interpret
             if (resultWindowMat.width() == 0 && resultWindowMat.height() == 0)
                 return new RDTInterpretationResult(resultWindowMat,
@@ -1208,8 +1029,8 @@ public class ImageProcessor {
 
             resultWindowMat.copyTo(unEnhancedResultWindow);
             // Enhance the result window if there is something worth enhancing in the first place
-            if (sigma.get(0, 0)[0] > RESULT_WINDOW_ENHANCE_THRESHOLD)
-                resultWindowMat = enhanceResultWindow(resultWindowMat);
+//            if (sigma.get(0, 0)[0] > RESULT_WINDOW_ENHANCE_THRESHOLD)
+//                resultWindowMat = enhanceResultWindow(resultWindowMat);
 
             // Detect the lines in the result window
             // Convert the image to HLS Experimented with using the original BGR2HLS vs the following two step conversion.
@@ -1252,6 +1073,9 @@ public class ImageProcessor {
             }
 
             // Detect the peaks
+            avgIntensities = SavGolFilter.applySGfilter(avgIntensities,5,2);
+            avgRedIntensities = SavGolFilter.applySGfilter(avgRedIntensities,5,2);
+
             peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
             Redpeaks = ImageUtil.detectPeaks(avgRedIntensities, mRDT.lineIntensity, false);
 
@@ -1381,9 +1205,6 @@ public class ImageProcessor {
 
             cnt++;
         } while (!tuned && cnt < 10);
-
-        Bitmap resultWindowBitmap = Bitmap.createBitmap(temp.width(), temp.height(), Bitmap.Config.ARGB_8888);
-        Utils.matToBitmap(temp, resultWindowBitmap);
 
         return new RDTInterpretationResult(unEnhancedResultWindow,
                 topLine, middleLine, bottomLine,

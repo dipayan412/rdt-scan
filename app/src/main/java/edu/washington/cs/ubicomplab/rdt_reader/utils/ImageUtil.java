@@ -14,6 +14,8 @@ import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.media.Image;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.util.Base64;
 import android.util.Log;
 
@@ -218,10 +220,15 @@ public final class ImageUtil {
      * @param max: whether a peak (max) or trough (min) is being tracked
      * @return a List of [peak_idx, peak_value, peak_width] for all detected peaks/troughs
      */
+    @RequiresApi(api = Build.VERSION_CODES.N)
     public static ArrayList<double[]> detectPeaks(double[] arr, double delta, boolean max) {
         ArrayList<double[]> peaks = new ArrayList<>();
         ArrayList<double[]> troughs = new ArrayList<>();
-        Log.d(TAG,"array "+ Arrays.toString(arr));
+//        Log.d(TAG,"array "+ Arrays.toString(arr));
+
+        // apply sg smoothing here
+//        arr = SavGolFilter.applySGfilter(arr);
+
         // Initialize peak tracking variables
         double min_val = arr[0];
         double max_val = arr[0];
@@ -246,10 +253,10 @@ public final class ImageUtil {
             if (lookingForMax) {
                 // Peak finding
                 if (curr < max_val-delta) {
-                    if (max_idx != Integer.MIN_VALUE)
+                    if (max_idx != Integer.MIN_VALUE){
                         peakWidth=measurePeakWidth(arr, max_idx, true);
                         peaks.add(new double[]{max_idx, max_val,peakWidth,
-                                peakLinearBaselineCorrected(arr,peakWidth,max_idx)});
+                                peakLinearBaselineCorrected(arr,peakWidth,max_idx)});}
                     min_val = curr;
                     min_idx = i;
                     lookingForMax = false;
@@ -257,10 +264,10 @@ public final class ImageUtil {
             } else {
                 // Trough finding
                 if (curr > min_val+delta) {
-                    if (min_idx != Integer.MIN_VALUE)
+                    if (min_idx != Integer.MIN_VALUE){
                         peakWidth=measurePeakWidth(arr, min_idx, false);
                         troughs.add(new double[]{min_idx, min_val,peakWidth,
-                                peakLinearBaselineCorrected(arr,peakWidth,min_idx)});
+                                peakLinearBaselineCorrected(arr,peakWidth,min_idx)});}
                     max_val = curr;
                     max_idx = i;
                     lookingForMax = true;
