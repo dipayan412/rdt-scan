@@ -121,7 +121,7 @@
     "MIDDLE_LINE_NAME": "Test",
     "LINE_INTENSITY": 85,
     "CHECK_GLARE": false,
-    "THRESHOLD": 2.5,
+    "THRESHOLD": 1.5,
     "MIN_DISTANCE": 40
   }
 }
