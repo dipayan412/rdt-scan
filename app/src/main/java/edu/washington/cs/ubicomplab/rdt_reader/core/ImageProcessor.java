@@ -47,6 +47,7 @@ import java.util.List;
 import edu.washington.cs.ubicomplab.rdt_reader.R;
 import edu.washington.cs.ubicomplab.rdt_reader.utils.ImageUtil;
 import edu.washington.cs.ubicomplab.rdt_reader.utils.SavGolFilter;
+import edu.washington.cs.ubicomplab.rdt_reader.utils.findPeaks;
 
 import static edu.washington.cs.ubicomplab.rdt_reader.core.Constants.*;
 import static java.lang.Math.pow;
@@ -1029,7 +1030,8 @@ public class ImageProcessor {
                     minMaxLocResult.maxVal, minMaxLocResult.maxLoc));
 
             resultWindowMat.copyTo(unEnhancedResultWindow);
-            // Enhance the result window if there is something worth enhancing in the first place
+
+//            // Enhance the result window if there is something worth enhancing in the first place
 //            if (sigma.get(0, 0)[0] > RESULT_WINDOW_ENHANCE_THRESHOLD)
 //                resultWindowMat = enhanceResultWindow(resultWindowMat);
 
@@ -1077,8 +1079,13 @@ public class ImageProcessor {
             avgIntensities = SavGolFilter.applySGfilter(avgIntensities,5,2);
             avgRedIntensities = SavGolFilter.applySGfilter(avgRedIntensities,5,2);
 
-            peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
-            Redpeaks = ImageUtil.detectPeaks(avgRedIntensities, mRDT.lineIntensity, false);
+            //simplified peakdetection version for specifying testline threshold values, and minimal distance between control and test line.
+            peaks=findPeaks.find_Peaks(avgIntensities,mRDT.threshold,mRDT.minDistance,false);
+            Redpeaks=findPeaks.find_Peaks(avgRedIntensities,mRDT.threshold,mRDT.minDistance,false);
+
+            // UW peak detection methods
+//            peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
+//            Redpeaks = ImageUtil.detectPeaks(avgRedIntensities, mRDT.lineIntensity, false);
 
             for (double[] p : peaks)
                 Log.d(TAG, String.format("peak: %.2f, %.2f, %.2f, %.2f, %.2f", p[0], p[1], p[2], avgHues[(int)p[0]], p[3]));

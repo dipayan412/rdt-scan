@@ -334,7 +334,7 @@ public final class ImageUtil {
      * @param max: whether a peak (max) or trough (min) is being tracked
      * @return the width of the peak in pixels
      */
-    private static double measurePeakWidth(double[] arr, int idx, boolean max) {
+    static double measurePeakWidth(double[] arr, int idx, boolean max) {
         double width = 0;
         int i;
         if (max) {
