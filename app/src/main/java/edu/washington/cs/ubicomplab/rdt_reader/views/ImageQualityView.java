@@ -39,9 +39,11 @@ import android.hardware.camera2.params.StreamConfigurationMap;
 import android.media.Image;
 import android.media.ImageReader;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
+import android.support.annotation.RequiresApi;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.text.Html;
@@ -334,6 +336,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
    public final ImageReader.OnImageAvailableListener singleOnImageAvailableListener =new ImageReader.OnImageAvailableListener(){
 
+        @RequiresApi(api = Build.VERSION_CODES.N)
         @Override
         public void onImageAvailable(ImageReader reader) {
             Log.d(TAG,"captured single image");

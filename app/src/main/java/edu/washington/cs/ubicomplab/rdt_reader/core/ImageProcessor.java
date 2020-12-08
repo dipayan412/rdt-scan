@@ -73,6 +73,7 @@ import static org.opencv.core.Core.perspectiveTransform;
 import static org.opencv.core.CvType.CV_32F;
 import static org.opencv.core.CvType.CV_8U;
 import static org.opencv.core.CvType.CV_8UC3;
+import static org.opencv.features2d.Features2d.DRAW_RICH_KEYPOINTS;
 import static org.opencv.imgproc.Imgproc.COLOR_BGR2HLS;
 import static org.opencv.imgproc.Imgproc.COLOR_RGB2GRAY;
 import static org.opencv.imgproc.Imgproc.COLOR_RGB2HLS;
@@ -377,7 +378,7 @@ public class ImageProcessor {
                 Utils.matToBitmap(keypointMat, featureMappingBitmap);
 
                 Mat refKeypointMat = new Mat();
-                Features2d.drawKeypoints(mRDT.refImg, mRDT.refKeypoints, refKeypointMat);
+                Features2d.drawKeypoints(mRDT.refImg, mRDT.refKeypoints, refKeypointMat, new Scalar(155), DRAW_RICH_KEYPOINTS);
                 Bitmap refImageKeypointBitmap = Bitmap.createBitmap(refKeypointMat.width(), refKeypointMat.height(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(refKeypointMat, refImageKeypointBitmap);
 
@@ -1181,6 +1182,7 @@ public class ImageProcessor {
             controlLinePosition = mRDT.bottomLinePosition;
         }
 
+        String avgRedIntensitiesStr = "";
         int cnt = 0;
         do {
             // Crop the result window
@@ -1257,6 +1259,10 @@ public class ImageProcessor {
             // Detect the peaks
             avgIntensities = SavGolFilter.applySGfilter(avgIntensities,5,2);
             avgRedIntensities = SavGolFilter.applySGfilter(avgRedIntensities,5,2);
+            avgRedIntensitiesStr = "";
+            for(int i = 0; i < avgRedIntensities.length; i++) {
+                avgRedIntensitiesStr += "" + avgRedIntensities[i] + "\n";
+            }
 
             peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
             Redpeaks = ImageUtil.detectPeaks(avgRedIntensities, mRDT.lineIntensity, false);
