@@ -49,6 +49,12 @@ public class RDT {
     public double threshold;
     public int minDistance;
 
+    //SavGol parameters
+    public int savgolWidth;
+    public int savgolOrder;
+    //signal channel
+    public String signalChannel;
+
     // Fiducial variables
     public double distanctFromFiducialToResultWindow;
     public Rect resultWindowRect;
@@ -135,6 +141,19 @@ public class RDT {
             // READ PEAK DETECTION PARAMETERS
             threshold=obj.has("THRESHOLD")?obj.getDouble("THRESHOLD"):2.5;
             minDistance=obj.has("MIN_DISTANCE")?obj.getInt("MIN_DISTANCE"):40;
+
+            //get SavGol params and signal channel parameters
+            if (obj.has("SavGolParams")) {
+                JSONArray savgolParams = obj.getJSONArray("SavGolParams");
+                savgolWidth = savgolParams.getInt(0);
+                savgolOrder = savgolParams.getInt(1);
+            } else {
+                savgolWidth = 5;
+                savgolOrder = 2;
+            }
+
+            //signal channel
+            signalChannel=obj.has("SignalChannel")?obj.getString("SignalChannel"):"R";
 
             // Pull data related to fiducials
             fiducials = obj.has("FIDUCIALS") ? obj.getJSONArray("FIDUCIALS") : new JSONArray();
