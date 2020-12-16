@@ -66,6 +66,8 @@ import static org.opencv.core.CvType.CV_8UC3;
 import static org.opencv.imgproc.Imgproc.COLOR_BGR2HLS;
 import static org.opencv.imgproc.Imgproc.COLOR_RGB2GRAY;
 import static org.opencv.imgproc.Imgproc.COLOR_RGB2HLS;
+import static org.opencv.imgproc.Imgproc.COLOR_RGB2YUV;
+import static org.opencv.imgproc.Imgproc.COLOR_RGBA2GRAY;
 import static org.opencv.imgproc.Imgproc.COLOR_RGBA2RGB;
 import static org.opencv.imgproc.Imgproc.Laplacian;
 import static org.opencv.imgproc.Imgproc.THRESH_BINARY_INV;
@@ -1037,50 +1039,74 @@ public class ImageProcessor {
             // Detect the lines in the result window
             // Convert the image to HLS Experimented with using the original BGR2HLS vs the following two step conversion.
             // The results do not seem to be very different in terms of peak height.
-            Mat rgb = new Mat();
-            Mat hls = new Mat();
-            cvtColor(resultWindowMat, rgb, COLOR_RGBA2RGB);
-            cvtColor(rgb, hls, COLOR_RGB2HLS);
 
-            //Extract the red channel
+
+
+            Mat rgb = new Mat();
+            Mat selectedChannel=new Mat();
+            cvtColor(resultWindowMat, rgb, COLOR_RGBA2RGB);
             List<Mat> RGBChannels = new ArrayList<>();
             Core.split(rgb,RGBChannels);
-            Mat RedChannel=RGBChannels.get(0);
-            double[] avgRedIntensities = new double[RedChannel.cols()];
 
-            // Split the channels
             List<Mat> channels = new ArrayList<>();
+            Mat hls = new Mat();
+            cvtColor(rgb, hls, COLOR_RGB2HLS);
             Core.split(hls, channels);
+            Mat hue = channels.get(0);
+            double[] avgHues = new double[hue.cols()];
+
+            // calculte average 1D profile based on selection.
+            switch (mRDT.signalChannel) {
+                case "R":
+                    selectedChannel=RGBChannels.get(0);
+                    break;
+                case "G":
+                    selectedChannel=RGBChannels.get(1);
+                    break;
+                case "B":
+                    selectedChannel=RGBChannels.get(2);
+                    break;
+                case "GRAY":
+                    Mat gray = new Mat();
+                    cvtColor(resultWindowMat,gray,COLOR_RGBA2GRAY);
+                    selectedChannel=gray;
+                    break;
+                case "L":
+                    selectedChannel = channels.get(1);
+                    break;
+                case "Y":
+                    Mat yuv = new Mat();
+                    cvtColor(rgb, yuv, COLOR_RGB2YUV);
+                    Core.split(yuv, channels);
+                    selectedChannel = channels.get(0);
+                    break;
+                default:
+                    selectedChannel=RGBChannels.get(0);
+            }
+
 
             // Compute the average intensity for each column of the result window
-            Mat lightness = channels.get(1);
-            Mat hue = channels.get(0);
-            avgIntensities = new double[lightness.cols()];
-            double[] avgHues = new double[hue.cols()];
-            for (int i = 0; i < lightness.cols(); i++) {
+            int arrayLength=selectedChannel.cols();
+            avgIntensities = new double[arrayLength];
+
+
+            for (int i = 0; i < arrayLength; i++) {
                 avgIntensities[i] = 0;
-                //initialize red channel
-                avgRedIntensities[i]=0;
                 avgHues[i] = 0;
-                for (int j = 0; j < lightness.rows(); j++) {
-                    avgIntensities[i] += lightness.get(j, i)[0];
-                    // Extract Red Channel
-                    avgRedIntensities[i] += RedChannel.get(j, i)[0];
+                for (int j = 0; j < selectedChannel.rows(); j++) {
+                    avgIntensities[i] += selectedChannel.get(j, i)[0];
                     avgHues[i] += hue.get(j, i)[0];
                 }
-                avgIntensities[i] /= lightness.rows();
+                avgIntensities[i] /= selectedChannel.rows();
                 // Calculate column average
-                avgRedIntensities[i]/=RedChannel.rows();
                 avgHues[i] /= hue.rows();
             }
 
             // Detect the peaks
-            avgIntensities = SavGolFilter.applySGfilter(avgIntensities,5,2);
-            avgRedIntensities = SavGolFilter.applySGfilter(avgRedIntensities,5,2);
+            avgIntensities = SavGolFilter.applySGfilter(avgIntensities,mRDT.savgolWidth,mRDT.savgolOrder);
 
             //simplified peakdetection version for specifying testline threshold values, and minimal distance between control and test line.
             peaks=findPeaks.find_Peaks(avgIntensities,mRDT.threshold,mRDT.minDistance,false);
-            Redpeaks=findPeaks.find_Peaks(avgRedIntensities,mRDT.threshold,mRDT.minDistance,false);
 
             // UW peak detection methods
 //            peaks = ImageUtil.detectPeaks(avgIntensities, mRDT.lineIntensity, false);
@@ -1215,6 +1241,6 @@ public class ImageProcessor {
 
         return new RDTInterpretationResult(unEnhancedResultWindow,
                 topLine, middleLine, bottomLine,
-                mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, hasTooMuchBlood, mRDT.numberOfLines, peaks,Redpeaks, avgIntensities);
+                mRDT.topLineName, mRDT.middleLineName, mRDT.bottomLineName, hasTooMuchBlood, mRDT.numberOfLines,mRDT.signalChannel, peaks, avgIntensities);
     }
 }

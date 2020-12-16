@@ -122,12 +122,13 @@ public class ImageQualityActivity extends Activity implements ImageQualityViewLi
                 i.putExtra("timeTaken", timeTaken);
                 i.putExtra("hasTooMuchBlood", rdtInterpretationResult.hasTooMuchBlood);
                 i.putExtra("numberOfLines", rdtInterpretationResult.numberOfLines);
+                i.putExtra("signalChannel", rdtInterpretationResult.channels);
 
                 Bundle args = new Bundle();
                 //modified signature to peaksArray
                 args.putSerializable("peaksArray",(Serializable)rdtInterpretationResult.peaks);
                 //red peak array packed into intent
-                args.putSerializable("RedpeaksArray", (Serializable)rdtInterpretationResult.redPeaks);
+//                args.putSerializable("RedpeaksArray", (Serializable)rdtInterpretationResult.redPeaks);
                 args.putSerializable("avgIntensities",(Serializable)rdtInterpretationResult.avgIntensities);
                 i.putExtra("BUNDLE",args);
 
