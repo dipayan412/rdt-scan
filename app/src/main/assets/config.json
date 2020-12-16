@@ -122,6 +122,9 @@
     "LINE_INTENSITY": 85,
     "CHECK_GLARE": false,
     "THRESHOLD": 2.5,
-    "MIN_DISTANCE": 40
+    "MIN_DISTANCE": 40,
+    "SavGolParams": [5,2],
+    "SignalChannel": "R",
+    "signal comments": "possible values: R,G,B,GRAY,L,Y"
   }
 }

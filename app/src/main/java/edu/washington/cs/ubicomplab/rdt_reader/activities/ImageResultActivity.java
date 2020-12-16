@@ -109,16 +109,14 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         Bundle args = intent.getBundleExtra("BUNDLE");
         // peaksarray extracted
         ArrayList<double[]> peaks = (ArrayList<double[]>) args.getSerializable("peaksArray");
-        // extract red channel peaks
-        ArrayList<double[]> redPeaks = (ArrayList<double[]>) args.getSerializable("RedpeaksArray");
+
         double[] avgIntensities = (double[]) args.getSerializable("avgIntensities");
 
-        resultString = "" + (peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f", peaks.get(0)[3]) : "-1");
+        String channel=intent.hasExtra("signalChannel")?intent.getStringExtra("signalChannel"):"Unknown";
+
+        resultString ="Channel - " + channel+" : " + (peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f", peaks.get(0)[3]) : "-1");
         resultString += ":" + (peaks.size() > 1 ? String.format("%.1f", peaks.get(1)[3]) : "-1")+System.lineSeparator();
 
-        //add red peak results to the resultString
-        resultString += "" + (redPeaks.size() > 0 && redPeaks.get(0) != null ? String.format("%.1f", redPeaks.get(0)[3]) : "-1");
-        resultString += ":" + (redPeaks.size() > 1 ? String.format("%.1f", redPeaks.get(1)[3]) : "-1");
 
         // Captured image
         ImageView resultImageView = findViewById(R.id.RDTImageView);
@@ -139,22 +137,22 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
 
             originalWindowBitmap = BitmapFactory.decodeByteArray(windowByteArray,0,windowByteArray.length);
 
-            if(redPeaks.size() > 0) {
+            if(peaks.size() > 0) {
 
                 Mat windowMat = new Mat();
                 Utils.bitmapToMat(originalWindowBitmap, windowMat);//Imgcodecs.imdecode(new MatOfByte(windowByteArray), Imgcodecs.CV_LOAD_IMAGE_ANYCOLOR);
 //                Imgproc.cvtColor(windowMat,windowMat,Imgproc.COLOR_BGR2RGB);
 //                Bitmap temp = Bitmap.createBitmap(windowMat.cols(), windowMat.rows(), Bitmap.Config.ARGB_8888);
 //                Utils.matToBitmap(windowMat, temp);
-                if(redPeaks.get(0) != null) {
-                    Point pt1_control = new Point(redPeaks.get(0)[0], 0);
-                    Point pt2_control = new Point(redPeaks.get(0)[0], 4);
+                if(peaks.get(0) != null) {
+                    Point pt1_control = new Point(peaks.get(0)[0], 0);
+                    Point pt2_control = new Point(peaks.get(0)[0], 4);
 //                    Imgproc.line(windowMat, pt1_control, pt2_control, new Scalar(255, 166, 0), 1);
                     Imgproc.line(windowMat, pt1_control, pt2_control, new Scalar(0, 0, 255), 1);
                 }
-                if(redPeaks.size() > 1) {
-                    Point pt1_test=new Point(redPeaks.get(1)[0],0);
-                    Point pt2_test=new Point(redPeaks.get(1)[0],4);
+                if(peaks.size() > 1) {
+                    Point pt1_test=new Point(peaks.get(1)[0],0);
+                    Point pt2_test=new Point(peaks.get(1)[0],4);
                     Imgproc.line(windowMat,pt1_test,pt2_test,new Scalar(72,255,0),1);
                 }
                 Bitmap windowBitmap = Bitmap.createBitmap(windowMat.cols(), windowMat.rows(), Bitmap.Config.ARGB_8888);
@@ -192,7 +190,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
             boolean topLine = intent.getBooleanExtra("topLine", false);
             TextView topLineTextView = findViewById(R.id.topLineTextView);
             topLineTextView.setTextColor(Color.rgb(0, 0, 255));
-            topLineTextView.setText(redPeaks.size() > 0 && redPeaks.get(0) != null ? String.format("%.1f",(redPeaks.get(0)[3])) : "no control line");
+            topLineTextView.setText(peaks.size() > 0 && peaks.get(0) != null ? String.format("%.1f",(peaks.get(0)[3])) : "no control line");
             //topLineTextView.setText(String.format("%s", topLine ? "True" : "False"));
         }
         if (intent.hasExtra("topLineName")) {
@@ -206,7 +204,7 @@ public class ImageResultActivity extends AppCompatActivity implements View.OnCli
         if (intent.hasExtra("middleLine")) {
             boolean middleLine = intent.getBooleanExtra("middleLine", false);
             TextView middleLineTextView = findViewById(R.id.middleLineTextView);
-            middleLineTextView.setText(redPeaks.size() > 1 ? String.format("%.1f",(redPeaks.get(1)[3])) : "no test line");
+            middleLineTextView.setText(peaks.size() > 1 ? String.format("%.1f",(peaks.get(1)[3])) : "no test line");
             middleLineTextView.setTextColor(Color.rgb(51,153,0));
             //middleLineTextView.setText(String.format("%s", middleLine ? "True" : "False"));
         }
