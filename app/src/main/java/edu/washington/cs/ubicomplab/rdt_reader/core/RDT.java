@@ -148,7 +148,7 @@ public class RDT {
                 savgolWidth = savgolParams.getInt(0);
                 savgolOrder = savgolParams.getInt(1);
             } else {
-                savgolWidth = 5;
+                savgolWidth = 6;
                 savgolOrder = 2;
             }
 
