@@ -27,6 +27,7 @@ public class RDTInterpretationResult {
     public Bitmap resultBitmap;
     public boolean hasTooMuchBlood;
     public int numberOfLines;
+    public String channels;
     public ArrayList<double[]> peaks;
     public ArrayList<double[]> redPeaks;
     public double[] avgIntensities;
@@ -67,7 +68,28 @@ public class RDTInterpretationResult {
             Utils.matToBitmap(resultMat, resultBitmap);
         }
     }
-
+    public RDTInterpretationResult(Mat resultMat, boolean topLine, boolean middleLine, boolean bottomLine,
+                                   String topLineName, String middleLineName, String bottomLineName,
+                                   boolean hasTooMuchBlood, int numberOfLines,String channels, ArrayList<double[]> peaks, double[] avgIntensities){
+        this.resultMat = resultMat;
+        this.topLine = topLine;
+        this.middleLine = middleLine;
+        this.bottomLine = bottomLine;
+        this.topLineName = topLineName;
+        this.middleLineName = middleLineName;
+        this.bottomLineName = bottomLineName;
+        this.hasTooMuchBlood = hasTooMuchBlood;
+        this.numberOfLines = numberOfLines;
+        this.channels=channels;
+        this.peaks = peaks;
+        this.avgIntensities = avgIntensities;
+        // Convert the image to a Bitmap so it can be displayed with Android
+        if (resultMat.cols() > 0 && resultMat.rows() > 0) {
+            this.resultBitmap = Bitmap.createBitmap(resultMat.cols(), resultMat.rows(),
+                    Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(resultMat, resultBitmap);
+        }
+    }
     public RDTInterpretationResult(Mat resultWindowMat, boolean topLine, boolean middleLine, boolean bottomLine,
                                    String topLineName, String middleLineName, String bottomLineName,
                                    boolean hasTooMuchBlood, int numberOfLines,
