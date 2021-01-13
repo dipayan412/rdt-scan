@@ -9,13 +9,16 @@
 package edu.washington.cs.ubicomplab.rdt_reader.views;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.TypedArray;
+import android.graphics.Bitmap;
 import android.graphics.ImageFormat;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.hardware.Sensor;
@@ -59,16 +62,26 @@ import android.widget.Toast;
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.LoaderCallbackInterface;
 
+import org.opencv.android.Utils;
+import org.opencv.core.Core;
 import org.opencv.core.Mat;
+import org.opencv.core.Rect;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 
+import java.util.Date;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import edu.washington.cs.ubicomplab.rdt_reader.R;
+import edu.washington.cs.ubicomplab.rdt_reader.core.Constants;
 import edu.washington.cs.ubicomplab.rdt_reader.core.ImageProcessor;
 import edu.washington.cs.ubicomplab.rdt_reader.interfaces.ImageQualityViewListener;
 import edu.washington.cs.ubicomplab.rdt_reader.core.RDTCaptureResult;
@@ -131,9 +144,11 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
     private HandlerThread mOnImageAvailableThread;
     private Handler mOnImageAvailableHandler;
     private ImageReader mImageReader;
+    public ImageReader singleImageReader;
     final Object focusStateLock = new Object();
     final BlockingQueue<Image> imageQueue = new ArrayBlockingQueue<>(1);
     private CaptureRequest.Builder mPreviewRequestBuilder;
+    private CaptureRequest.Builder mCaptureRequestBuilder;
 
     private SensorManager sensorManager;
     private Sensor sensor;
@@ -289,7 +304,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 return;
 
             // Check that an image is available
-            final Image image = reader.acquireLatestImage();
+            final Image image = reader.acquireNextImage();
             Log.d(TAG,"Image Height " +image.getHeight()+" Image Width "+ image.getWidth());
 
             if (image == null)
@@ -310,9 +325,30 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             imageQueue.add(image);
             new ImageProcessAsyncTask().execute(image);
         }
-
     };
 
+   public final ImageReader.OnImageAvailableListener singleOnImageAvailableListener =new ImageReader.OnImageAvailableListener(){
+
+        @Override
+        public void onImageAvailable(ImageReader reader) {
+            Log.d(TAG,"captured single image");
+            Image image = reader.acquireNextImage();
+            Mat hiresMat = ImageUtil.imageToRGBMat(image);
+            image.close();
+
+            Double cropwidth=.8;
+            Double cropheight=.6;
+            int neworiginX= (int) (hiresMat.width()*(1-cropwidth)/2);
+            int neworiginY= (int) (hiresMat.height()*(1-cropheight)/2);
+            int newWidth=(int) (hiresMat.width()-2*neworiginX);
+            int newHeight=(int)hiresMat.height()-2*neworiginY;
+
+            Rect cropRect=new Rect(neworiginX,neworiginY,newWidth,newHeight);
+            hiresMat = hiresMat.submat(cropRect);
+            Core.rotate(hiresMat,hiresMat,Core.ROTATE_90_CLOCKWISE);
+            mImageQualityViewListener.onSingleImage(hiresMat);
+        }
+    };
     /**
      * Callback for handling events related to JPEG capture
      */
@@ -377,11 +413,11 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
     /**
      * The main {@link AsyncTask} that calls on the RDT quality checking and interpretation methods
      */
-    private class ImageProcessAsyncTask extends AsyncTask<Image, Void, Void> {
+    private class ImageProcessAsyncTask extends AsyncTask<Image, Void, RDTDetectedResult> {
 
         @RequiresApi(api = Build.VERSION_CODES.N)
         @Override
-        protected Void doInBackground(Image... images) {
+        protected RDTDetectedResult  doInBackground(Image... images) {
             // Assess the quality of this image
             Image image = images[0];
             final Mat rgbaMat = ImageUtil.imageToRGBMat(image);
@@ -423,10 +459,27 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 interpretationResult.resultMat.release();
 
             // Interrupt the thread if a result was found
-            if (result == RDTDetectedResult.STOP)
-                mOnImageAvailableThread.interrupt();
+            /*if (result == RDTDetectedResult.STOP) {
+                try {
+                    mCaptureSession.capture(mCaptureRequestBuilder.build(),null,null);
+                } catch (CameraAccessException e) {
+                    e.printStackTrace();
+                }
+                //mOnImageAvailableThread.interrupt();
+            }*/
+            return result;
+        }
 
-            return null;
+        @Override
+        protected void onPostExecute(RDTDetectedResult result) {
+            //super.onPostExecute(result);
+            if(result==RDTDetectedResult.STOP){
+                try{
+                    mCaptureSession.capture(mCaptureRequestBuilder.build(),null,null);
+                }catch (CameraAccessException e){
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
@@ -647,6 +700,11 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 mImageReader.close();
                 mImageReader = null;
             }
+            if(null!=singleImageReader){
+                singleImageReader.close();
+                singleImageReader=null;
+            }
+
         } catch (InterruptedException e) {
             throw new RuntimeException("Interrupted while trying to lock camera closing.", e);
         } finally {
@@ -684,10 +742,18 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
                 Size closestImageSize = new Size(Integer.MAX_VALUE,
                         (int) (Integer.MAX_VALUE * (aspectRatio[1] / aspectRatio[0])));
 
+                Size maxSize= new Size(0,0);
+
                 // Find the closest sizes to the that is most similar to the desired aspect ratio
                 for (Size size : Arrays.asList(map.getOutputSizes(ImageFormat.YUV_420_888))) {
                     Log.d(TAG, "Available Sizes: " + size.toString());
+
                     if (size.getWidth()*aspectRatio[1] == size.getHeight()*aspectRatio[0]) {
+                        //get maximum size with desired aspect ratio
+                        //cassette length (width in image) is dominate dim, so 16:9 will reduce size
+                        if(size.getWidth()*size.getHeight()>maxSize.getWidth()*maxSize.getHeight()){
+                            maxSize=size;
+                        }
                         // Check if current preview size is closer to the ideal
                         double currPreviewDiff = (CAMERA2_PREVIEW_SIZE.height*CAMERA2_PREVIEW_SIZE.width) -
                                 closestPreviewSize.getHeight()*closestPreviewSize.getWidth();
@@ -717,9 +783,12 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
 
                 // Start the image listener
                 mImageReader = ImageReader.newInstance(closestImageSize.getWidth(),
-                        closestImageSize.getHeight(), ImageFormat.YUV_420_888,5);
+                        closestImageSize.getHeight(), ImageFormat.YUV_420_888,3);
                 mImageReader.setOnImageAvailableListener(
                         mOnImageAvailableListener, mOnImageAvailableHandler);
+
+                singleImageReader =ImageReader.newInstance(maxSize.getWidth(),maxSize.getHeight(),ImageFormat.YUV_420_888,5);
+                singleImageReader.setOnImageAvailableListener(singleOnImageAvailableListener,mOnImageAvailableHandler);
 
                 // Update the aspect ratio of the TextureView to the size of the preview
                 int orientation = getResources().getConfiguration().orientation;
@@ -890,6 +959,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             // Prepare the Surface
             Surface surface = new Surface(texture);
             Surface mImageSurface = mImageReader.getSurface();
+            Surface singleImageSurface= singleImageReader.getSurface();
 
             // Add objects to builder
             mPreviewRequestBuilder
@@ -897,8 +967,17 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             mPreviewRequestBuilder.addTarget(surface);
             mPreviewRequestBuilder.addTarget(mImageSurface);
 
+            mCaptureRequestBuilder=mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
+            mCaptureRequestBuilder.addTarget(singleImageSurface);
+            mCaptureRequestBuilder.addTarget(surface);
+            mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+            mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,CaptureRequest.CONTROL_AE_MODE_ON);
+            mCaptureRequestBuilder.set(CaptureRequest.CONTROL_AWB_MODE,CaptureRequest.CONTROL_AWB_MODE_AUTO);
+            mCaptureRequestBuilder.set(CaptureRequest.FLASH_MODE, CaptureRequest.FLASH_MODE_SINGLE);
+            mCaptureRequestBuilder.set(CaptureRequest.EDGE_MODE,CaptureRequest.EDGE_MODE_HIGH_QUALITY);
+
             // Create CaptureSession for preview
-            mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
+            mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface(),singleImageSurface),
                     mCameraCaptureSessionStateCallback, null
             );
         } catch (CameraAccessException e) {
@@ -939,7 +1018,7 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
             mInstructionText.setText(getResources().getString(R.string.instruction_pos));
             String checkSymbol = "&#x2713; ";
             String isFlatStr = isFlat ? checkSymbol + "Flat: passed" : "Flat: failed";
-            String message = String.format(getResources().getString(R.string.quality_msg_format),
+            @SuppressLint("StringFormatMatches") String message = String.format(getResources().getString(R.string.quality_msg_format),
                     "failed", "failed", "failed", "failed", isFlatStr);
             mImageQualityFeedbackView.setText(Html.fromHtml(message));
         } else if (currFocusState == FocusState.INACTIVE) {
@@ -1000,7 +1079,8 @@ public class ImageQualityView extends LinearLayout implements View.OnClickListen
      * and the {@link ImageProcessor} is doing its final check
      * @param currentState: the current {@link QualityCheckingState}
      */
-    private void setProgressUI(QualityCheckingState currentState) {
+    private void
+    setProgressUI(QualityCheckingState currentState) {
         // Skip if feedback is not needed
         if (!showFeedback)
             return;

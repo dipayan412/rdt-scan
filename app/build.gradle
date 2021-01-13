@@ -14,9 +14,9 @@ android {
         applicationId "edu.washington.cs.ubicomplab.rdt_reader"
         minSdkVersion 21
         targetSdkVersion 26
-        versionCode 1
-        versionName "1.0"
-        setProperty("archivesBaseName", "GHL-rdtscan-$versionName")
+        versionCode 2
+        versionName "2.0"
+        setProperty("archivesBaseName", "GHL-rdtscan_hires-$versionName")
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
         externalNativeBuild {
             cmake {
